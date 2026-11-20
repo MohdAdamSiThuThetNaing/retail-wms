@@ -7,9 +7,36 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseLocationController;
+use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\StockMovementController;
+use App\Http\Controllers\StockTransferController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\StockReceivingController;
+
+Route::middleware('guest')->group(function () {
+    Route::get('/login', [AuthController::class, 'showLogin'])
+        ->name('login');
+
+    Route::post('/login', [AuthController::class, 'login'])
+        ->name('login.store');
+});
+
+// Stock Receiving
+Route::middleware('auth')->group(function () {
+    Route::get('/stock-receiving', [StockReceivingController::class, 'create'])
+        ->name('stock-receiving.create');
+
+    Route::post('/stock-receiving', [StockReceivingController::class, 'store'])
+        ->name('stock-receiving.store');
+});
+
+Route::post('/logout', [AuthController::class, 'logout'])
+    ->middleware('auth')
+    ->name('logout');
 
 // Dashboard
 Route::get('/', [DashboardController::class, 'index'])
+    ->middleware('auth')
     ->name('dashboard');
 
 // Products
@@ -66,3 +93,17 @@ Route::get('/_session-debug', function () {
     ->header('X-WMS-Debug', 'route-reached')
     ->cookie('wms_manual_test', 'works', 120);
 });
+
+// Inventory
+Route::get('/inventory', [InventoryController::class, 'index'])
+    ->name('inventory.index');
+
+Route::get('/stock-movements', [StockMovementController::class, 'index'])
+    ->name('stock-movements.index');
+
+
+Route::get('/stock-transfers/create', [StockTransferController::class, 'create'])
+    ->name('stock-transfers.create');
+
+Route::post('/stock-transfers', [StockTransferController::class, 'store'])
+    ->name('stock-transfers.store');
