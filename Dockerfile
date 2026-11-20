@@ -1,12 +1,15 @@
 FROM php:8.4-fpm
 
 RUN apt-get update && apt-get install -y \
+    $PHPIZE_DEPS \
     git \
     unzip \
     curl \
     libzip-dev \
     libicu-dev \
     libonig-dev \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && docker-php-ext-install -j$(nproc) \
         pdo_mysql \
         bcmath \
