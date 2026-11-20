@@ -1,150 +1,456 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Retail WMS Dashboard</title>
-    <style>
-        * { box-sizing: border-box; }
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f4f6fa;
-            color: #1f2937;
-        }
-        .sidebar {
-            position: fixed;
-            width: 230px;
-            height: 100vh;
-            background: #172033;
-            color: white;
-            padding: 28px 20px;
-        }
-        .sidebar h2 { font-size: 20px; margin-bottom: 35px; }
-        .sidebar a {
-            display: block;
-            color: #cbd5e1;
-            text-decoration: none;
-            padding: 13px 10px;
-            border-radius: 7px;
-            margin-bottom: 8px;
-        }
-        .sidebar a.active, .sidebar a:hover {
-            background: #334155;
-            color: white;
-        }
-        main { margin-left: 230px; padding: 35px; }
-        header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 30px;
-        }
-        header h1 { margin: 0; font-size: 27px; }
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 18px;
-            margin-bottom: 30px;
-        }
-        .card, .panel {
-            background: white;
-            padding: 22px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,.04);
-        }
-        .card p { color: #64748b; margin: 0 0 12px; }
-        .card h2 { font-size: 30px; margin: 0; }
-        .panel h2 { font-size: 18px; margin-top: 0; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td {
-            padding: 14px 10px;
-            border-bottom: 1px solid #e5e7eb;
-            text-align: left;
-        }
-        th { color: #64748b; font-size: 13px; }
-        .empty { color: #64748b; text-align: center; }
-        @media(max-width: 900px) {
-            .cards { grid-template-columns: repeat(2, 1fr); }
-            .sidebar { width: 180px; }
-            main { margin-left: 180px; padding: 20px; }
-        }
-        @media(max-width: 600px) {
-            .sidebar { position: static; width: 100%; height: auto; }
-            main { margin-left: 0; padding: 16px; }
-            .cards { grid-template-columns: 1fr 1fr; }
-            .table-wrap { overflow-x: auto; }
-        }
-    </style>
+
+    <title>Dashboard | Retail WMS</title>
+
+    <meta name="description" content="Enterprise Retail and Warehouse Management Dashboard">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
 </head>
+
 <body>
+<div class="app">
+
+    {{-- Sidebar --}}
     <aside class="sidebar">
-        <h2>Retail WMS</h2>
-        <a href="/" class="active">Dashboard</a>
-        <a href="#">Products</a>
-        <a href="#">Warehouses</a>
-        <a href="#">Inventory</a>
-        <a href="#">Movements</a>
+
+        <div class="brand">
+            <div class="brand-icon">R</div>
+
+            <div class="brand-copy">
+                <div class="brand-name">Retail WMS</div>
+                <div class="brand-sub">ENTERPRISE PLATFORM</div>
+            </div>
+        </div>
+
+        <div class="nav-label">Workspace</div>
+
+        <a href="{{ url('/') }}" class="nav-link active">
+            <span class="nav-icon">▦</span>
+            <span class="nav-text">Dashboard</span>
+        </a>
+
+        <a href="#" class="nav-link">
+            <span class="nav-icon">▤</span>
+            <span class="nav-text">Products</span>
+        </a>
+
+        <a href="#" class="nav-link">
+            <span class="nav-icon">▣</span>
+            <span class="nav-text">Warehouses</span>
+        </a>
+
+        <a href="#" class="nav-link">
+            <span class="nav-icon">⇄</span>
+            <span class="nav-text">Inventory</span>
+        </a>
+
+        <a href="#" class="nav-link">
+            <span class="nav-icon">⇅</span>
+            <span class="nav-text">Stock Movements</span>
+        </a>
+
+        <div class="nav-label">Management</div>
+
+        <a href="#" class="nav-link">
+            <span class="nav-icon">♙</span>
+            <span class="nav-text">Users & Roles</span>
+        </a>
+
+        <a href="#" class="nav-link">
+            <span class="nav-icon">⚙</span>
+            <span class="nav-text">Settings</span>
+        </a>
+
+        <div class="sidebar-bottom">
+            <div class="brand-sub">RETAIL WMS · VERSION 1.0</div>
+            <p>Enterprise inventory and warehouse management.</p>
+        </div>
+
     </aside>
 
-    <main>
-        <header>
-            <h1>Dashboard</h1>
-            <span>Warehouse Management System</span>
+    {{-- Main Content --}}
+    <main class="main">
+
+        {{-- Top Navigation --}}
+        <header class="topbar">
+
+            <div class="breadcrumb">
+                Workspace &nbsp;/&nbsp;
+                <strong>Dashboard</strong>
+            </div>
+
+            <div class="top-actions">
+
+                <button
+                    class="icon-button"
+                    type="button"
+                    aria-label="Refresh dashboard"
+                    onclick="window.location.reload()"
+                >
+                    ↻
+                </button>
+
+                <div class="profile">
+
+                    <div class="avatar">A</div>
+
+                    <div class="profile-copy">
+                        <div class="profile-name">Administrator</div>
+                        <div class="profile-role">System Admin</div>
+                    </div>
+
+                </div>
+
+            </div>
+
         </header>
 
-        <section class="cards">
-            <div class="card">
-                <p>Total Products</p>
-                <h2>{{ number_format($stats['products']) }}</h2>
-            </div>
-            <div class="card">
-                <p>Active Warehouses</p>
-                <h2>{{ number_format($stats['warehouses']) }}</h2>
-            </div>
-            <div class="card">
-                <p>Total Stock</p>
-                <h2>{{ number_format($stats['total_stock']) }}</h2>
-            </div>
-            <div class="card">
-                <p>Low Stock Items</p>
-                <h2>{{ number_format($stats['low_stock']) }}</h2>
-            </div>
-        </section>
+        {{-- Dashboard Content --}}
+        <div class="content">
 
-        <section class="panel">
-            <h2>Recent Inventory Movements</h2>
-            <div class="table-wrap">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Product</th>
-                            <th>Warehouse</th>
-                            <th>Type</th>
-                            <th>Quantity</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @forelse($recentMovements as $movement)
-                            <tr>
-                                <td>{{ $movement->product?->name ?? 'N/A' }}</td>
-                                <td>{{ $movement->warehouse?->name ?? 'N/A' }}</td>
-                                <td>{{ ucfirst($movement->type) }}</td>
-                                <td>{{ number_format($movement->quantity) }}</td>
-                                <td>{{ $movement->created_at }}</td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="5" class="empty">
-                                    No inventory movements found.
-                                </td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </section>
+            {{-- Page Heading --}}
+            <section class="page-heading">
+
+                <div>
+                    <h1>Dashboard Overview</h1>
+
+                    <div class="subtitle">
+                        Monitor your retail operations and warehouse performance.
+                    </div>
+                </div>
+
+                <div class="date-label">
+                    {{ now()->format('D, d M Y') }}
+                </div>
+
+            </section>
+
+            {{-- KPI Statistics --}}
+            <section class="stats-grid">
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+                        <div class="stat-label">Total Products</div>
+                        <div class="stat-icon purple">▤</div>
+                    </div>
+
+                    <div class="stat-value">
+                        {{ number_format($stats['products']) }}
+                    </div>
+
+                    <div class="stat-foot">
+                        Products registered in the system
+                    </div>
+
+                </article>
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+                        <div class="stat-label">Active Warehouses</div>
+                        <div class="stat-icon blue">▣</div>
+                    </div>
+
+                    <div class="stat-value">
+                        {{ number_format($stats['warehouses']) }}
+                    </div>
+
+                    <div class="stat-foot">
+                        Currently active warehouse locations
+                    </div>
+
+                </article>
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+                        <div class="stat-label">Total Stock Units</div>
+                        <div class="stat-icon green">▥</div>
+                    </div>
+
+                    <div class="stat-value">
+                        {{ number_format($stats['total_stock']) }}
+                    </div>
+
+                    <div class="stat-foot">
+                        Combined quantity across warehouses
+                    </div>
+
+                </article>
+
+                <article class="stat-card">
+
+                    <div class="stat-top">
+                        <div class="stat-label">Low Stock Items</div>
+                        <div class="stat-icon orange">⚠</div>
+                    </div>
+
+                    <div class="stat-value">
+                        {{ number_format($stats['low_stock']) }}
+                    </div>
+
+                    <div class="stat-foot">
+                        Stock records at or below reorder level
+                    </div>
+
+                </article>
+
+            </section>
+
+            {{-- Main Dashboard Grid --}}
+            <section class="section-grid">
+
+                {{-- Recent Movements --}}
+                <div class="panel">
+
+                    <div class="panel-header">
+
+                        <div>
+                            <div class="panel-title">
+                                Recent Inventory Movements
+                            </div>
+
+                            <div class="panel-subtitle">
+                                Latest stock activity recorded in the system
+                            </div>
+                        </div>
+
+                        <a href="#" class="view-all">
+                            View all →
+                        </a>
+
+                    </div>
+
+                    <div class="table-wrap">
+
+                        <table>
+
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Movement</th>
+                                    <th>Warehouse</th>
+                                    <th>Quantity</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+
+                                @forelse($recentMovements as $movement)
+
+                                    @php
+                                        $movementType = strtolower($movement->type ?? 'unknown');
+
+                                        $movementClass = match($movementType) {
+                                            'receive', 'in', 'inbound' => 'type-in',
+                                            'transfer' => 'type-transfer',
+                                            'issue', 'out', 'outbound' => 'type-out',
+                                            default => 'type-transfer',
+                                        };
+                                    @endphp
+
+                                    <tr>
+
+                                        <td>
+                                            <div class="product-name">
+                                                {{ $movement->product?->name ?? 'Unknown product' }}
+                                            </div>
+
+                                            <div class="secondary">
+                                                {{ $movement->product?->sku ?? '—' }}
+                                            </div>
+                                        </td>
+
+                                        <td>
+                                            <span class="type {{ $movementClass }}">
+                                                {{ ucfirst($movementType) }}
+                                            </span>
+                                        </td>
+
+                                        <td>
+                                            {{ $movement->warehouse?->name ?? '—' }}
+                                        </td>
+
+                                        <td>
+                                            <strong>
+                                                {{ number_format($movement->quantity ?? 0) }}
+                                            </strong>
+                                        </td>
+
+                                        <td>
+                                            {{ $movement->created_at?->format('d M Y, H:i') ?? '—' }}
+                                        </td>
+
+                                    </tr>
+
+                                @empty
+
+                                    <tr>
+                                        <td colspan="5" class="empty">
+                                            No inventory movements recorded yet.
+                                        </td>
+                                    </tr>
+
+                                @endforelse
+
+                            </tbody>
+
+                        </table>
+
+                    </div>
+
+                </div>
+
+                {{-- Right Dashboard Panels --}}
+                <div class="side-panel">
+
+                    {{-- Inventory Summary --}}
+                    <div class="panel">
+
+                        <div class="panel-header">
+                            <div>
+                                <div class="panel-title">Inventory Summary</div>
+                                <div class="panel-subtitle">
+                                    Current inventory indicators
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="stock-body">
+
+                            <div class="stock-metric">
+                                <span class="stock-name">Registered products</span>
+                                <span class="stock-number">
+                                    {{ number_format($stats['products']) }}
+                                </span>
+                            </div>
+
+                            <div class="stock-metric">
+                                <span class="stock-name">Active warehouses</span>
+                                <span class="stock-number">
+                                    {{ number_format($stats['warehouses']) }}
+                                </span>
+                            </div>
+
+                            <div class="stock-metric">
+                                <span class="stock-name">Total stock units</span>
+                                <span class="stock-number">
+                                    {{ number_format($stats['total_stock']) }}
+                                </span>
+                            </div>
+
+                            <div class="stock-metric">
+                                <span class="stock-name">Low stock records</span>
+                                <span class="stock-number">
+                                    {{ number_format($stats['low_stock']) }}
+                                </span>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {{-- Stock Alerts --}}
+                    <div class="panel">
+
+                        <div class="panel-header">
+                            <div>
+                                <div class="panel-title">Stock Attention</div>
+                                <div class="panel-subtitle">
+                                    Reorder monitoring
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="alert-body">
+
+                            <div class="alert-box">
+
+                                <div class="alert-symbol">⚠</div>
+
+                                <div>
+
+                                    <div class="alert-title">
+                                        {{ $stats['low_stock'] > 0
+                                            ? 'Low stock requires attention'
+                                            : 'No low stock records' }}
+                                    </div>
+
+                                    <div class="alert-text">
+                                        {{ $stats['low_stock'] > 0
+                                            ? number_format($stats['low_stock']) . ' stock records are at or below their reorder level.'
+                                            : 'Your current stock records are above their configured reorder levels.' }}
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    {{-- Platform Information --}}
+                    <div class="panel">
+
+                        <div class="panel-header">
+                            <div>
+                                <div class="panel-title">Platform Information</div>
+                                <div class="panel-subtitle">
+                                    Application details
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="system-body">
+
+                            <div class="system-row">
+                                <span>Framework</span>
+                                <strong class="system-value">Laravel 12</strong>
+                            </div>
+
+                            <div class="system-row">
+                                <span>Application</span>
+                                <strong>Retail WMS</strong>
+                            </div>
+
+                            <div class="system-row">
+                                <span>Environment</span>
+                                <strong>{{ app()->environment() }}</strong>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </section>
+
+            {{-- Footer --}}
+            <footer class="footer">
+                © {{ date('Y') }} Retail WMS. Enterprise Retail & Warehouse Management.
+            </footer>
+
+        </div>
+
     </main>
+
+</div>
 </body>
 </html>
