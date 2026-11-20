@@ -1,145 +1,544 @@
-# Enterprise Retail & Warehouse Management System (Laravel)
+# Enterprise Retail & Warehouse Management System
 
-A senior-level portfolio starter for demonstrating Laravel MVC, MySQL design, inventory consistency,
-authorization, REST APIs, automated tests, and Linux VPS deployment.
+A Laravel-based Warehouse Management System (WMS) designed to manage products, multiple warehouses, inventory balances, and stock movements through a web dashboard and versioned REST API.
 
-## Stack
+This project demonstrates senior-level backend engineering practices, including modular application design, database integrity, transactional inventory operations, concurrency control, API authentication, automated testing, and containerized deployment.
 
--   Laravel 12 / PHP 8.3+
--   MySQL 8
--   Blade + Tailwind (use Laravel's starter kit if you want a ready-made UI)
--   Laravel Sanctum (API authentication)
--   Redis (optional cache/queue backend)
--   PHPUnit / Pest
+> **Project status:** Active development. The current implementation includes the Laravel application foundation, MySQL persistence, inventory domain models and services, Sanctum-protected API endpoints, Docker-based local infrastructure, and an initial Blade dashboard. Features listed as planned are not represented as completed.
 
-## Important scope note
+---
 
-This is a **Laravel application starter/implementation pack**, not a pre-installed Laravel vendor directory.
-Install Laravel first, then copy these files into the fresh application. This keeps dependencies reproducible
-and avoids shipping a large, machine-specific `vendor/` folder.
+## 1. Technology Stack
 
-## 1. Create the Laravel app
+| Category              | Technology                   |
+| --------------------- | ---------------------------- |
+| Backend               | PHP 8.4, Laravel 12          |
+| Database              | MySQL 8                      |
+| ORM                   | Eloquent ORM                 |
+| Authentication        | Laravel Sanctum              |
+| Frontend              | Blade, HTML, CSS             |
+| Web Server            | Nginx                        |
+| PHP Runtime           | PHP-FPM                      |
+| Containerization      | Docker, Docker Compose       |
+| Dependency Management | Composer                     |
+| Testing               | PHPUnit / Laravel Test Suite |
+| Version Control       | Git, GitHub                  |
 
-```bash
-composer create-project laravel/laravel retail-wms "^12.0"
-cd retail-wms
+## 2. Core Business Capabilities
+
+### Product Management
+
+-   Maintain product records and SKU identifiers.
+-   Retrieve and paginate product listings.
+-   Create products through the REST API.
+
+### Warehouse Management
+
+-   Maintain multiple warehouse locations.
+-   Track active warehouse records.
+-   Retrieve warehouse-specific inventory.
+
+### Inventory Management
+
+-   Receive stock into a warehouse.
+-   Transfer stock between warehouses.
+-   Maintain warehouse-level stock balances.
+-   Track inventory movement history.
+-   Identify products requiring replenishment.
+
+### Dashboard
+
+-   Total product count.
+-   Active warehouse count.
+-   Aggregate stock quantity.
+-   Low-stock item count.
+-   Recent inventory movement history.
+
+## 3. System Architecture
+
+The application follows a **modular monolith architecture**.
+
+This approach keeps the system within one Laravel deployment while organizing business responsibilities into distinct modules. It provides clear separation of concerns without introducing unnecessary microservice complexity.
+
+### High-Level Architecture
+
+```text
+                   Web Browser / API Client
+                             |
+                             v
+                         NGINX
+                             |
+                             v
+                    Laravel Application
+                             |
+              +--------------+--------------+
+              |              |              |
+           Web Layer      API Layer     Authentication
+           (Blade)        (REST API)      (Sanctum)
+              |              |              |
+              +--------------+--------------+
+                             |
+                             v
+                    Application Services
+                             |
+              +--------------+--------------+
+              |              |              |
+           Catalog        Warehouse       Inventory
+           Management     Management      Management
+                             |
+                             v
+                       Eloquent ORM
+                             |
+                             v
+                         MySQL 8
+              +--------------+--------------+
+              |              |              |
+           Products      Warehouses      Inventory
+                                          Stocks
+                                          Movements
 ```
 
-Copy the contents of this package into the Laravel project root, preserving directories.
+### Architectural Principles
 
-## 2. Configure MySQL
+-   Separation of HTTP responsibilities and business logic.
+-   Centralized inventory business operations.
+-   Database transactions for stock-changing operations.
+-   Database constraints to protect data integrity.
+-   Authentication and authorization boundaries.
+-   Versioned REST API design.
+-   Automated testing of business-critical workflows.
 
-Create a database and update `.env`:
+## 4. Project Structure
+
+```text
+retail-wms/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   ├── DashboardController.php
+│   │   │   └── API/
+│   │   └── Requests/
+│   ├── Models/
+│   │   ├── Product.php
+│   │   ├── Warehouse.php
+│   │   ├── WarehouseStock.php
+│   │   └── InventoryMovement.php
+│   └── Services/
+│       └── InventoryService.php
+│
+├── bootstrap/
+├── config/
+├── database/
+│   ├── migrations/
+│   └── seeders/
+│
+├── deploy/
+├── docker/
+│   └── nginx/
+│
+├── docs/
+│   └── architecture/
+│
+├── public/
+├── resources/
+│   └── views/
+│       └── dashboard/
+│
+├── routes/
+│   ├── api.php
+│   └── web.php
+│
+├── tests/
+├── Dockerfile
+├── docker-compose.yml
+├── composer.json
+├── composer.lock
+└── README.md
+```
+
+The structure above documents the current application areas and recommended documentation location. Additional domain and application layers can be introduced incrementally as the codebase grows.
+
+## 5. Database Design
+
+The current database foundation includes the following entities:
+
+| Table                  | Responsibility                         |
+| ---------------------- | -------------------------------------- |
+| users                  | Application users                      |
+| products               | Product and SKU information            |
+| warehouses             | Warehouse information                  |
+| warehouse_stocks       | Current product quantity per warehouse |
+| inventory_movements    | Inventory movement history             |
+| personal_access_tokens | Sanctum API tokens                     |
+| cache                  | Database cache storage                 |
+| jobs                   | Database queue storage                 |
+
+### Key Relationships
+
+```text
+Product
+   |
+   +------ WarehouseStock ------ Warehouse
+   |
+   +------ InventoryMovement --- Warehouse
+
+User
+   |
+   +------ InventoryMovement (created_by)
+```
+
+### Data Integrity
+
+Important database integrity considerations include:
+
+-   Unique product SKU values.
+-   Unique warehouse/product stock combinations.
+-   Foreign key relationships between inventory records.
+-   Indexed lookup fields for common inventory queries.
+-   Transactional updates for stock-changing operations.
+
+The database schema should remain the final authority for enforcing uniqueness and referential integrity.
+
+## 6. Inventory Transaction Design
+
+Inventory operations are business-critical because incorrect stock balances can affect purchasing, sales, and warehouse operations.
+
+### Stock Receiving
+
+```text
+Receive Stock
+     |
+     v
+Validate Request
+     |
+     v
+Begin Transaction
+     |
+     v
+Find or Create Stock Record
+     |
+     v
+Update Warehouse Quantity
+     |
+     v
+Create Inventory Movement
+     |
+     v
+Commit Transaction
+```
+
+### Stock Transfer
+
+```text
+Transfer Request
+       |
+       v
+Validate Source and Destination
+       |
+       v
+Begin Database Transaction
+       |
+       v
+Lock Affected Stock Rows
+       |
+       v
+Check Available Quantity
+       |
+       v
+Debit Source Warehouse
+       |
+       v
+Credit Destination Warehouse
+       |
+       v
+Record Inventory Movements
+       |
+       v
+Commit Transaction
+```
+
+### Concurrency and Consistency
+
+The inventory implementation uses database transactions and row-level locking as core consistency mechanisms.
+
+The intended guarantees are:
+
+-   Prevent negative inventory balances.
+-   Prevent partial stock transfers.
+-   Keep balance updates and movement records in the same transaction.
+-   Protect stock rows against conflicting concurrent updates.
+-   Maintain an auditable inventory history.
+
+Production hardening should additionally cover concurrent stock-row creation, deadlock retry behavior, idempotency, and reconciliation tests.
+
+## 7. REST API
+
+All application API routes use the `/api/v1` prefix.
+
+| Method | Endpoint                               | Description               |
+| ------ | -------------------------------------- | ------------------------- |
+| GET    | `/api/v1/products`                     | Retrieve products         |
+| POST   | `/api/v1/products`                     | Create product            |
+| GET    | `/api/v1/warehouses`                   | Retrieve warehouses       |
+| GET    | `/api/v1/warehouses/{warehouse}/stock` | Retrieve warehouse stock  |
+| POST   | `/api/v1/inventory/receive`            | Receive inventory         |
+| POST   | `/api/v1/inventory/transfer`           | Transfer inventory        |
+| GET    | `/api/v1/inventory/movements`          | Retrieve movement history |
+
+### API Security
+
+The current API routes are protected using Laravel Sanctum authentication middleware.
+
+Authentication is not the same as authorization. Warehouse-level policies, role assignment, and permission management remain important production enhancements.
+
+Inspect the actual registered endpoints with:
+
+```bash
+php artisan route:list --path=api
+```
+
+## 8. Local Development with Docker
+
+### Prerequisites
+
+-   Docker Desktop
+-   Docker Compose
+-   Git
+
+### Start Services
+
+```bash
+git clone https://github.com/MohdAdamSiThuThetNaing/retail-wms.git
+
+cd retail-wms
+
+docker compose up -d --build
+```
+
+Check containers:
+
+```bash
+docker compose ps
+```
+
+### Install Dependencies
+
+```bash
+docker compose exec app composer install
+```
+
+### Configure Environment
+
+Create your environment file:
+
+```bash
+cp .env.example .env
+```
+
+Configure the Docker database connection:
 
 ```dotenv
 APP_NAME="Retail WMS"
 APP_ENV=local
 APP_DEBUG=true
-APP_URL=http://127.0.0.1:8000
+APP_URL=http://localhost:8081
 
 DB_CONNECTION=mysql
-DB_HOST=127.0.0.1
+DB_HOST=mysql
 DB_PORT=3306
 DB_DATABASE=retail_wms
-DB_USERNAME=root
-DB_PASSWORD=your_password
-
-CACHE_STORE=database
-QUEUE_CONNECTION=database
-SESSION_DRIVER=database
+DB_USERNAME=retail_user
+DB_PASSWORD=retail_password
 ```
 
-Then run:
+Use your actual local Compose credentials if they differ from these examples.
+
+### Generate Application Key
 
 ```bash
-php artisan key:generate
-php artisan migrate
-php artisan serve
+docker compose exec app php artisan key:generate
 ```
 
-## 3. Seed demo data
+### Run Database Migrations
 
 ```bash
-php artisan db:seed
+docker compose exec app php artisan migrate
 ```
 
-The seeder creates two warehouses and sample products. For production, replace demo credentials and
-add a proper user onboarding flow. The example seeder intentionally does not create a hard-coded admin password.
-
-## 4. Main API endpoints
-
-All routes are prefixed with `/api/v1`.
-
-| Method | Endpoint                               | Purpose                |
-| ------ | -------------------------------------- | ---------------------- |
-| GET    | `/api/v1/products`                     | Paginated product list |
-| POST   | `/api/v1/products`                     | Create product         |
-| GET    | `/api/v1/warehouses`                   | Warehouse list         |
-| GET    | `/api/v1/warehouses/{warehouse}/stock` | Stock by warehouse     |
-| POST   | `/api/v1/inventory/receive`            | Receive stock          |
-| POST   | `/api/v1/inventory/transfer`           | Transfer stock         |
-| GET    | `/api/v1/inventory/movements`          | Movement audit trail   |
-
-Protect the routes with Sanctum middleware after installing/configuring Sanctum:
+### Seed Demo Data
 
 ```bash
-php artisan install:api
+docker compose exec app php artisan db:seed
 ```
 
-The supplied route file shows the intended protected boundary. For a quick local walkthrough,
-temporarily remove `auth:sanctum` only in a local development environment; do not do this in a demo
-that is exposed to the internet.
+### Clear Laravel Cache
 
-## 5. Architecture decisions to explain in the interview
+```bash
+docker compose exec app php artisan optimize:clear
+```
 
--   **Thin controllers:** HTTP validation and response formatting live in controllers/Form Requests.
--   **Service layer:** inventory business rules are centralized in `InventoryService`.
--   **Database transactions:** a stock transfer debits and credits stock in one transaction.
--   **Row-level locking:** `lockForUpdate()` prevents concurrent requests from overselling the same stock.
--   **Auditability:** every inventory change creates an immutable movement record.
--   **Indexes:** unique SKU and composite warehouse/product indexes support common lookups.
--   **Pagination:** product and movement lists are paginated instead of loading all records.
--   **Validation:** Form Requests validate inputs before business logic runs.
--   **Authorization:** use policies/roles for warehouse-level access; the starter leaves role assignment as an extension.
+### Access Application
 
-## 6. Production deployment outline (Ubuntu VPS)
+```text
+http://localhost:8081
+```
 
-1. Provision Ubuntu LTS, create a non-root deploy user, configure SSH keys and firewall.
-2. Install PHP 8.3 FPM and required extensions, Composer, Nginx, MySQL, and Git.
-3. Deploy the code into `/var/www/retail-wms`.
-4. Configure `.env` with production secrets; never commit it.
-5. Run `composer install --no-dev --optimize-autoloader`.
-6. Run `php artisan migrate --force`.
-7. Set `storage` and `bootstrap/cache` ownership/permissions for the PHP-FPM user.
-8. Configure Nginx to serve the `public/` directory and pass PHP requests to PHP-FPM.
-9. Issue TLS with Certbot / Let's Encrypt.
-10. Configure queue workers with Supervisor or systemd.
-11. Run `php artisan config:cache`, `route:cache`, and `view:cache`.
-12. Add backups, log rotation, monitoring, and a rollback procedure.
+The URL assumes the Nginx container maps host port `8081` to container port `80`.
 
-See `deploy/nginx-retail-wms.conf` and `deploy/DEPLOYMENT.md`.
+## 9. Testing
 
-## 7. Interview demo flow (8–10 minutes)
+Run the Laravel test suite:
 
-1. Explain the domain: multiple warehouses, SKUs, stock movements.
-2. Show the schema and explain the unique/index constraints.
-3. Create a product and receive stock.
-4. Transfer stock between warehouses.
-5. Explain the DB transaction and row lock in `InventoryService`.
-6. Show the movement audit trail.
-7. Explain API authentication, authorization, validation, and tests.
-8. Walk through the Nginx/PHP-FPM/SSL deployment architecture.
+```bash
+docker compose exec app php artisan test
+```
 
-## 8. Suggested next enhancements
+Recommended critical test scenarios:
 
--   Role/permission management using policies or a permission package.
--   Barcode scanning UI.
--   Purchase order approval workflow.
--   Reservation/commitment of stock for sales orders.
--   Idempotency keys for retry-safe inventory APIs.
--   Outbox pattern for reliable domain events.
--   Redis-backed queues and cache invalidation.
--   Feature tests for concurrent transfers and insufficient stock.
--   CI pipeline and zero-downtime deployment.
+-   Product creation and SKU uniqueness.
+-   Warehouse stock receiving.
+-   Successful stock transfer.
+-   Insufficient stock rejection.
+-   Transaction rollback after failed operations.
+-   Inventory movement creation.
+-   Unauthenticated API access.
+-   Invalid request validation.
+-   Concurrent stock updates.
 
-Be transparent in the interview about which features you personally implemented and which are planned extensions.
+Testing concurrent inventory operations and database-level integrity should be prioritized before production deployment.
+
+## 10. Security Considerations
+
+-   Keep application secrets in `.env`.
+-   Never commit production credentials or access tokens.
+-   Use Sanctum for API authentication.
+-   Validate all external request data.
+-   Implement policies for warehouse-level access.
+-   Use least-privilege database accounts.
+-   Disable debug mode in production.
+-   Enforce HTTPS.
+-   Apply rate limiting to sensitive endpoints.
+-   Monitor authentication failures and privileged operations.
+
+## 11. Deployment Architecture
+
+The intended production deployment uses:
+
+```text
+                Internet
+                   |
+                   v
+              Domain / DNS
+                   |
+                   v
+              HTTPS / TLS
+                   |
+                   v
+                 Nginx
+                   |
+                   v
+               PHP-FPM
+                   |
+                   v
+             Laravel 12
+                   |
+                   v
+                MySQL 8
+```
+
+Production deployment responsibilities include:
+
+1. Ubuntu LTS server provisioning.
+2. Secure SSH access and firewall configuration.
+3. PHP-FPM and required PHP extensions.
+4. Composer dependency installation.
+5. Nginx configuration.
+6. Environment and secret management.
+7. Database migrations.
+8. TLS certificate configuration.
+9. Application logs and monitoring.
+10. Database backups and recovery procedures.
+
+A production deployment should use:
+
+```bash
+composer install --no-dev --optimize-autoloader
+
+php artisan migrate --force
+
+php artisan config:cache
+
+php artisan route:cache
+
+php artisan view:cache
+```
+
+These commands are deployment steps, not a claim that production infrastructure has already been configured.
+
+## 12. Engineering Roadmap
+
+| Priority | Enhancement                                  | Status      |
+| -------- | -------------------------------------------- | ----------- |
+| P1       | Laravel application and Docker foundation    | Implemented |
+| P1       | Product and warehouse data models            | Implemented |
+| P1       | Inventory receive and transfer foundation    | Implemented |
+| P1       | Sanctum-protected API routes                 | Implemented |
+| P1       | Initial Blade dashboard                      | Implemented |
+| P2       | Complete product and warehouse CRUD UI       | Planned     |
+| P2       | Role-based access control and policies       | Planned     |
+| P2       | API Resources and consistent error contracts | Planned     |
+| P2       | Comprehensive inventory feature tests        | Planned     |
+| P3       | Idempotency keys for inventory operations    | Planned     |
+| P3       | Purchase order and approval workflow         | Planned     |
+| P3       | Stock reservation for sales orders           | Planned     |
+| P3       | Redis queues and asynchronous notifications  | Planned     |
+| P3       | Outbox pattern for reliable event delivery   | Planned     |
+| P4       | CI/CD pipeline and automated deployment      | Planned     |
+| P4       | Monitoring, alerting, and reconciliation     | Planned     |
+
+## 13. Engineering Decisions
+
+### Why a Modular Monolith?
+
+The system currently benefits from a single deployment and a single relational transaction boundary. A modular monolith keeps inventory operations straightforward while allowing the codebase to develop clear domain boundaries.
+
+### Why MySQL Transactions?
+
+Stock receiving and transfers involve multiple related writes. Transactions ensure the balance changes and movement records either commit together or roll back together.
+
+### Why Row-Level Locking?
+
+Inventory operations can be requested concurrently. Row-level locking helps prevent conflicting updates from causing incorrect stock balances.
+
+### Why an Inventory Movement History?
+
+A current stock balance alone does not explain how inventory changed. Movement records provide an audit trail for receiving, transferring, and future adjustment workflows.
+
+### Why API Versioning?
+
+The `/api/v1` prefix provides a stable boundary for future API changes and external integrations.
+
+---
+
+## 14. Interview Demonstration
+
+A recommended technical walkthrough:
+
+1. Explain the warehouse management business domain.
+2. Present the application architecture and database relationships.
+3. Demonstrate product and warehouse data.
+4. Receive inventory into a warehouse.
+5. Transfer inventory between warehouses.
+6. Demonstrate insufficient stock validation.
+7. Explain transactions and row-level locking.
+8. Inspect the inventory movement history.
+9. Explain Sanctum authentication and API boundaries.
+10. Discuss testing, deployment, security, and future improvements.
+
+## 15. Project Philosophy
+
+This project focuses on engineering correctness, maintainability, data integrity, and operational reliability.
+
+The objective is not simply to build CRUD screens, but to demonstrate how a business-critical inventory application can be designed, implemented, tested, and prepared for production.
+
+**Built with Laravel, PHP, MySQL, and Docker.**
