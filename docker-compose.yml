@@ -1,0 +1,56 @@
+services:
+  app:
+    build: .
+    container_name: retail-wms-app
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www/html
+      - vendor_data:/var/www/html/vendor
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - retail-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: retail-wms-nginx
+    restart: unless-stopped
+    ports:
+      - "8081:80"
+    volumes:
+      - ./:/var/www/html
+      - ./docker/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - app
+    networks:
+      - retail-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: retail-wms-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: retail_wms
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_USER: retail_user
+      MYSQL_PASSWORD: retail_password
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-prootpassword"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - retail-network
+
+networks:
+  retail-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  vendor_data:
