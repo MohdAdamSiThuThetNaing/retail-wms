@@ -7,11 +7,22 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Warehouse extends Model
 {
-    protected $fillable = ['code', 'name', 'address', 'is_active'];
+    protected $fillable = [
+        'code',
+        'name',
+        'address',
+        'contact_person',
+        'phone',
+        'email',
+        'notes',
+        'is_active',
+    ];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+        ];
     }
 
     public function stocks(): HasMany
@@ -22,5 +33,10 @@ class Warehouse extends Model
     public function movements(): HasMany
     {
         return $this->hasMany(InventoryMovement::class);
+    }
+
+    public function locations(): HasMany
+    {
+        return $this->hasMany(WarehouseLocation::class);
     }
 }
