@@ -1,59 +1,145 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# Enterprise Retail & Warehouse Management System (Laravel)
 
-<p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
-</p>
+A senior-level portfolio starter for demonstrating Laravel MVC, MySQL design, inventory consistency,
+authorization, REST APIs, automated tests, and Linux VPS deployment.
 
-## About Laravel
+## Stack
 
-Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
+-   Laravel 12 / PHP 8.3+
+-   MySQL 8
+-   Blade + Tailwind (use Laravel's starter kit if you want a ready-made UI)
+-   Laravel Sanctum (API authentication)
+-   Redis (optional cache/queue backend)
+-   PHPUnit / Pest
 
-- [Simple, fast routing engine](https://laravel.com/docs/routing).
-- [Powerful dependency injection container](https://laravel.com/docs/container).
-- Multiple back-ends for [session](https://laravel.com/docs/session) and [cache](https://laravel.com/docs/cache) storage.
-- Expressive, intuitive [database ORM](https://laravel.com/docs/eloquent).
-- Database agnostic [schema migrations](https://laravel.com/docs/migrations).
-- [Robust background job processing](https://laravel.com/docs/queues).
-- [Real-time event broadcasting](https://laravel.com/docs/broadcasting).
+## Important scope note
 
-Laravel is accessible, powerful, and provides tools required for large, robust applications.
+This is a **Laravel application starter/implementation pack**, not a pre-installed Laravel vendor directory.
+Install Laravel first, then copy these files into the fresh application. This keeps dependencies reproducible
+and avoids shipping a large, machine-specific `vendor/` folder.
 
-## Learning Laravel
+## 1. Create the Laravel app
 
-Laravel has the most extensive and thorough [documentation](https://laravel.com/docs) and video tutorial library of all modern web application frameworks, making it a breeze to get started with the framework. You can also check out [Laravel Learn](https://laravel.com/learn), where you will be guided through building a modern Laravel application.
+```bash
+composer create-project laravel/laravel retail-wms "^12.0"
+cd retail-wms
+```
 
-If you don't feel like reading, [Laracasts](https://laracasts.com) can help. Laracasts contains thousands of video tutorials on a range of topics including Laravel, modern PHP, unit testing, and JavaScript. Boost your skills by digging into our comprehensive video library.
+Copy the contents of this package into the Laravel project root, preserving directories.
 
-## Laravel Sponsors
+## 2. Configure MySQL
 
-We would like to extend our thanks to the following sponsors for funding Laravel development. If you are interested in becoming a sponsor, please visit the [Laravel Partners program](https://partners.laravel.com).
+Create a database and update `.env`:
 
-### Premium Partners
+```dotenv
+APP_NAME="Retail WMS"
+APP_ENV=local
+APP_DEBUG=true
+APP_URL=http://127.0.0.1:8000
 
-- **[Vehikl](https://vehikl.com)**
-- **[Tighten Co.](https://tighten.co)**
-- **[Kirschbaum Development Group](https://kirschbaumdevelopment.com)**
-- **[64 Robots](https://64robots.com)**
-- **[Curotec](https://www.curotec.com/services/technologies/laravel)**
-- **[DevSquad](https://devsquad.com/hire-laravel-developers)**
-- **[Redberry](https://redberry.international/laravel-development)**
-- **[Active Logic](https://activelogic.com)**
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=retail_wms
+DB_USERNAME=root
+DB_PASSWORD=your_password
 
-## Contributing
+CACHE_STORE=database
+QUEUE_CONNECTION=database
+SESSION_DRIVER=database
+```
 
-Thank you for considering contributing to the Laravel framework! The contribution guide can be found in the [Laravel documentation](https://laravel.com/docs/contributions).
+Then run:
 
-## Code of Conduct
+```bash
+php artisan key:generate
+php artisan migrate
+php artisan serve
+```
 
-In order to ensure that the Laravel community is welcoming to all, please review and abide by the [Code of Conduct](https://laravel.com/docs/contributions#code-of-conduct).
+## 3. Seed demo data
 
-## Security Vulnerabilities
+```bash
+php artisan db:seed
+```
 
-If you discover a security vulnerability within Laravel, please send an e-mail to Taylor Otwell via [taylor@laravel.com](mailto:taylor@laravel.com). All security vulnerabilities will be promptly addressed.
+The seeder creates two warehouses and sample products. For production, replace demo credentials and
+add a proper user onboarding flow. The example seeder intentionally does not create a hard-coded admin password.
 
-## License
+## 4. Main API endpoints
 
-The Laravel framework is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+All routes are prefixed with `/api/v1`.
+
+| Method | Endpoint                               | Purpose                |
+| ------ | -------------------------------------- | ---------------------- |
+| GET    | `/api/v1/products`                     | Paginated product list |
+| POST   | `/api/v1/products`                     | Create product         |
+| GET    | `/api/v1/warehouses`                   | Warehouse list         |
+| GET    | `/api/v1/warehouses/{warehouse}/stock` | Stock by warehouse     |
+| POST   | `/api/v1/inventory/receive`            | Receive stock          |
+| POST   | `/api/v1/inventory/transfer`           | Transfer stock         |
+| GET    | `/api/v1/inventory/movements`          | Movement audit trail   |
+
+Protect the routes with Sanctum middleware after installing/configuring Sanctum:
+
+```bash
+php artisan install:api
+```
+
+The supplied route file shows the intended protected boundary. For a quick local walkthrough,
+temporarily remove `auth:sanctum` only in a local development environment; do not do this in a demo
+that is exposed to the internet.
+
+## 5. Architecture decisions to explain in the interview
+
+-   **Thin controllers:** HTTP validation and response formatting live in controllers/Form Requests.
+-   **Service layer:** inventory business rules are centralized in `InventoryService`.
+-   **Database transactions:** a stock transfer debits and credits stock in one transaction.
+-   **Row-level locking:** `lockForUpdate()` prevents concurrent requests from overselling the same stock.
+-   **Auditability:** every inventory change creates an immutable movement record.
+-   **Indexes:** unique SKU and composite warehouse/product indexes support common lookups.
+-   **Pagination:** product and movement lists are paginated instead of loading all records.
+-   **Validation:** Form Requests validate inputs before business logic runs.
+-   **Authorization:** use policies/roles for warehouse-level access; the starter leaves role assignment as an extension.
+
+## 6. Production deployment outline (Ubuntu VPS)
+
+1. Provision Ubuntu LTS, create a non-root deploy user, configure SSH keys and firewall.
+2. Install PHP 8.3 FPM and required extensions, Composer, Nginx, MySQL, and Git.
+3. Deploy the code into `/var/www/retail-wms`.
+4. Configure `.env` with production secrets; never commit it.
+5. Run `composer install --no-dev --optimize-autoloader`.
+6. Run `php artisan migrate --force`.
+7. Set `storage` and `bootstrap/cache` ownership/permissions for the PHP-FPM user.
+8. Configure Nginx to serve the `public/` directory and pass PHP requests to PHP-FPM.
+9. Issue TLS with Certbot / Let's Encrypt.
+10. Configure queue workers with Supervisor or systemd.
+11. Run `php artisan config:cache`, `route:cache`, and `view:cache`.
+12. Add backups, log rotation, monitoring, and a rollback procedure.
+
+See `deploy/nginx-retail-wms.conf` and `deploy/DEPLOYMENT.md`.
+
+## 7. Interview demo flow (8–10 minutes)
+
+1. Explain the domain: multiple warehouses, SKUs, stock movements.
+2. Show the schema and explain the unique/index constraints.
+3. Create a product and receive stock.
+4. Transfer stock between warehouses.
+5. Explain the DB transaction and row lock in `InventoryService`.
+6. Show the movement audit trail.
+7. Explain API authentication, authorization, validation, and tests.
+8. Walk through the Nginx/PHP-FPM/SSL deployment architecture.
+
+## 8. Suggested next enhancements
+
+-   Role/permission management using policies or a permission package.
+-   Barcode scanning UI.
+-   Purchase order approval workflow.
+-   Reservation/commitment of stock for sales orders.
+-   Idempotency keys for retry-safe inventory APIs.
+-   Outbox pattern for reliable domain events.
+-   Redis-backed queues and cache invalidation.
+-   Feature tests for concurrent transfers and insufficient stock.
+-   CI pipeline and zero-downtime deployment.
+
+Be transparent in the interview about which features you personally implemented and which are planned extensions.
