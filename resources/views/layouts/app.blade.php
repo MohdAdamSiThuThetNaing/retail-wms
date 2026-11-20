@@ -5,160 +5,308 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    <meta name="user-id" content="{{ auth()->id() }}">
+
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
 
     <title>@yield('title', 'Retail WMS') | Retail WMS</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
     <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <link rel="stylesheet" href="{{ asset('css/dashboard.css') }}">
     <link rel="stylesheet" href="{{ asset('css/products.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/notifications.css') }}">
 </head>
+
 <body>
+
 <div class="app">
 
+    {{-- Sidebar --}}
     <aside class="sidebar">
+
+        {{-- Brand --}}
         <div class="brand">
             <div class="brand-icon">R</div>
+
             <div class="brand-copy">
                 <div class="brand-name">Retail WMS</div>
                 <div class="brand-sub">ENTERPRISE PLATFORM</div>
             </div>
         </div>
 
+        {{-- Workspace Navigation --}}
         <div class="nav-label">Workspace</div>
 
-        <a href="{{ route('dashboard') }}"
-           class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
-            <span class="nav-icon">▦</span>
-            <span class="nav-text">Dashboard</span>
-        </a>
+        @can('dashboard.view')
+            <a href="{{ route('dashboard') }}"
+               class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}">
+                <span class="nav-icon">▦</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+        @endcan
 
-        <a href="{{ route('products.index') }}"
-           class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
-            <span class="nav-icon">▤</span>
-            <span class="nav-text">Products</span>
-        </a>
+        @can('products.view')
+            <a href="{{ route('products.index') }}"
+               class="nav-link {{ request()->routeIs('products.*') ? 'active' : '' }}">
+                <span class="nav-icon">▤</span>
+                <span class="nav-text">Products</span>
+            </a>
+        @endcan
 
-        <a href="{{ route('categories.index') }}"
-           class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }}">
-            <span class="nav-icon">▧</span>
-            <span class="nav-text">Categories</span>
-        </a>
+        @can('categories.view')
+            <a href="{{ route('categories.index') }}"
+               class="nav-link {{ request()->routeIs('categories.*') ? 'active' : '' }}">
+                <span class="nav-icon">▧</span>
+                <span class="nav-text">Categories</span>
+            </a>
+        @endcan
 
-        <a href="{{ route('warehouses.index') }}"
-        class="nav-link {{ request()->routeIs('warehouses.*', 'warehouse-locations.*') ? 'active' : '' }}">
-            <span class="nav-icon">▣</span>
-            <span class="nav-text">Warehouses</span>
-        </a>
+        @can('warehouses.view')
+            <a href="{{ route('warehouses.index') }}"
+               class="nav-link {{ request()->routeIs('warehouses.*', 'warehouse-locations.*') ? 'active' : '' }}">
+                <span class="nav-icon">▣</span>
+                <span class="nav-text">Warehouses</span>
+            </a>
+        @endcan
 
-        <a href="{{ route('inventory.index') }}"
-        class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
-            <span class="nav-icon">📦</span>
-            <span>Inventory</span>
-        </a>
+        @can('inventory.view')
+            <a href="{{ route('inventory.index') }}"
+               class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
+                <span class="nav-icon">📦</span>
+                <span class="nav-text">Inventory</span>
+            </a>
+        @endcan
 
-        <a href="{{ route('stock-receiving.create') }}"
-        class="nav-link {{ request()->routeIs('stock-receiving.*') ? 'active' : '' }}">
-            <span class="nav-icon">＋</span>
-            <span class="nav-text">Receive Stock</span>
-        </a>
+        @can('inventory.receive')
+            <a href="{{ route('stock-receiving.create') }}"
+               class="nav-link {{ request()->routeIs('stock-receiving.*') ? 'active' : '' }}">
+                <span class="nav-icon">＋</span>
+                <span class="nav-text">Receive Stock</span>
+            </a>
+        @endcan
 
-        <a href="{{ route('stock-movements.index') }}"
-        class="nav-link {{ request()->routeIs('stock-movements.*') ? 'active' : '' }}">
-            <span class="nav-icon">⇅</span>
-            <span class="nav-text">Stock Movements</span>
-        </a>
+        @can('stock-movements.view')
+            <a href="{{ route('stock-movements.index') }}"
+               class="nav-link {{ request()->routeIs('stock-movements.*') ? 'active' : '' }}">
+                <span class="nav-icon">⇅</span>
+                <span class="nav-text">Stock Movements</span>
+            </a>
+        @endcan
 
-        <a href="{{ route('stock-transfers.create') }}"
-        class="nav-link {{ request()->routeIs('stock-transfers.*') ? 'active' : '' }}">
-            <span class="nav-icon">⇄</span>
-            <span class="nav-text">Stock Transfer</span>
-        </a>
+        @can('inventory.transfer')
+            <a href="{{ route('stock-transfers.create') }}"
+               class="nav-link {{ request()->routeIs('stock-transfers.*') ? 'active' : '' }}">
+                <span class="nav-icon">⇄</span>
+                <span class="nav-text">Stock Transfer</span>
+            </a>
+        @endcan
 
-        <div class="nav-label">Business Operations</div>
-        <a href="#" class="nav-link">
-            <span class="nav-icon">♧</span>
-            <span class="nav-text">Suppliers</span>
-        </a>
-        <a href="#" class="nav-link">
-            <span class="nav-icon">🛒</span>
-            <span class="nav-text">Purchase Orders</span>
-        </a>
-        <a href="#" class="nav-link">
-            <span class="nav-icon">♙</span>
-            <span class="nav-text">Customers</span>
-        </a>
-        <a href="#" class="nav-link">
-            <span class="nav-icon">▣</span>
-            <span class="nav-text">Sales Orders</span>
-        </a>
+        {{-- Business Operations --}}
+        @if(auth()->user()->hasAnyPermission([
+            'suppliers.view',
+            'purchase-orders.view',
+            'customers.view',
+            'sales-orders.view'
+        ]))
 
-        <div class="nav-label">Management</div>
-        <a href="#" class="nav-link">
-            <span class="nav-icon">♙</span>
-            <span class="nav-text">Users & Roles</span>
-        </a>
-        <a href="#" class="nav-link">
-            <span class="nav-icon">⚙</span>
-            <span class="nav-text">Settings</span>
-        </a>
+            <div class="nav-label">Business Operations</div>
 
+            @can('suppliers.view')
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">♧</span>
+                    <span class="nav-text">Suppliers</span>
+                </a>
+            @endcan
+
+            @can('purchase-orders.view')
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">🛒</span>
+                    <span class="nav-text">Purchase Orders</span>
+                </a>
+            @endcan
+
+            @can('customers.view')
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">♙</span>
+                    <span class="nav-text">Customers</span>
+                </a>
+            @endcan
+
+            @can('sales-orders.view')
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">▣</span>
+                    <span class="nav-text">Sales Orders</span>
+                </a>
+            @endcan
+
+        @endif
+
+        {{-- Management --}}
+        @if(auth()->user()->hasAnyPermission([
+            'roles.manage',
+            'settings.manage'
+        ]))
+
+            <div class="nav-label">Management</div>
+
+            @can('roles.manage')
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">♙</span>
+                    <span class="nav-text">Users & Roles</span>
+                </a>
+            @endcan
+
+            @can('settings.manage')
+                <a href="#" class="nav-link">
+                    <span class="nav-icon">⚙</span>
+                    <span class="nav-text">Settings</span>
+                </a>
+            @endcan
+
+        @endif
+
+        {{-- Sidebar Footer --}}
         <div class="sidebar-bottom">
             <div class="brand-sub">RETAIL WMS · VERSION 1.0</div>
             <p>Enterprise inventory and warehouse management.</p>
         </div>
+
     </aside>
 
+    {{-- Main Content --}}
     <main class="main">
+
+        {{-- Topbar --}}
         <header class="topbar">
+
             <div class="breadcrumb">
                 Workspace / <strong>@yield('breadcrumb', 'Products')</strong>
             </div>
 
             <div class="top-actions">
-                <button class="icon-button" type="button"
-                        aria-label="Refresh page"
-                        onclick="window.location.reload()">↻</button>
 
+                <button class="icon-button"
+                        type="button"
+                        aria-label="Refresh page"
+                        onclick="window.location.reload()">
+                    ↻
+                </button>
+
+                @include('notifications.partials.center')
+                {{-- Logged-in User Profile --}}
                 <div class="profile">
-                    <div class="avatar">A</div>
-                    <div class="profile-copy">
-                        <div class="profile-name">Administrator</div>
-                        <div class="profile-role">System Admin</div>
+
+                    <div class="avatar">
+                        {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                     </div>
+
+                    <div class="profile-copy">
+
+                        <div class="profile-name">
+                            {{ auth()->user()->name }}
+                        </div>
+
+                        <div class="profile-role">
+                            {{ auth()->user()->getRoleNames()->implode(', ') ?: 'No Role Assigned' }}
+                        </div>
+
+                    </div>
+
                 </div>
+
             </div>
+
         </header>
 
+        {{-- Page Content --}}
         <div class="content">
+
+            {{-- Success Message --}}
             @if(session('success'))
-                <div class="flash flash-success">{{ session('success') }}</div>
+                <div class="flash flash-success">
+                    {{ session('success') }}
+                </div>
             @endif
 
+            {{-- Error Message --}}
             @if(session('error'))
-                <div class="flash flash-error">{{ session('error') }}</div>
+                <div class="flash flash-error">
+                    {{ session('error') }}
+                </div>
             @endif
 
+            {{-- Validation Errors --}}
             @if($errors->any())
                 <div class="flash flash-error">
+
                     <strong>Please correct the following errors:</strong>
+
                     <ul>
                         @foreach($errors->all() as $error)
                             <li>{{ $error }}</li>
                         @endforeach
                     </ul>
+
                 </div>
             @endif
 
+            {{-- Main View --}}
             @yield('content')
 
+            {{-- Real-Time WebSocket Demo --}}
+            <section id="realtime-demo"
+                     class="panel"
+                     style="margin-top: 24px; padding: 24px;">
+
+                <div class="panel-header">
+                    <div>
+                        <h2>Real-Time WebSocket Demo</h2>
+                        <p>Laravel Reverb + Echo + Redis + Horizon</p>
+                    </div>
+                </div>
+
+                <div style="margin-top: 16px;">
+
+                    <p id="socket-status"
+                       role="status"
+                       aria-live="polite"
+                       style="font-weight: 600;">
+                        🟡 Connecting to Reverb...
+                    </p>
+
+                    <button
+                        type="button"
+                        id="send-realtime-test"
+                        class="btn btn-primary"
+                    >
+                        🔔 Send Test Socket Notification
+                    </button>
+
+                    <div
+                        id="socket-message"
+                        aria-live="polite"
+                        style="margin-top: 16px;"
+                    ></div>
+
+                </div>
+
+            </section>
+
+            {{-- Footer --}}
             <footer class="footer">
-                © {{ date('Y') }} Retail WMS. Enterprise Retail & Warehouse Management.
+                © {{ date('Y') }} Retail WMS.
+                Enterprise Retail & Warehouse Management.
             </footer>
+
         </div>
+
     </main>
+
 </div>
+
 </body>
 </html>
