@@ -1,3 +1,4 @@
+
 <?php
 
 use App\Models\User;
@@ -11,9 +12,10 @@ Broadcast::channel('App.Models.User.{id}', function (User $user, int $id) {
 Broadcast::channel(
     'warehouses.{warehouseId}.inventory',
     function (User $user, int $warehouseId): bool {
-        return Warehouse::query()
-            ->whereKey($warehouseId)
-            ->where('is_active', true)
-            ->exists();
+        return $user->can('inventory.view')
+            && Warehouse::query()
+                ->whereKey($warehouseId)
+                ->where('is_active', true)
+                ->exists();
     }
 );

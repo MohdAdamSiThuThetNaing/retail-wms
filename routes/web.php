@@ -1,109 +1,229 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Http\Request;
 
+use App\Events\RealtimeTestNotification;
+
+use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\ProductCategoryController;
 use App\Http\Controllers\WarehouseController;
 use App\Http\Controllers\WarehouseLocationController;
 use App\Http\Controllers\InventoryController;
+use App\Http\Controllers\StockReceivingController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\StockTransferController;
-use App\Http\Controllers\AuthController;
-use App\Http\Controllers\StockReceivingController;
+use App\Http\Controllers\NotificationController;
+
+/*
+|--------------------------------------------------------------------------
+| Guest Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware('guest')->group(function () {
+
     Route::get('/login', [AuthController::class, 'showLogin'])
         ->name('login');
 
     Route::post('/login', [AuthController::class, 'login'])
         ->name('login.store');
+
 });
 
-// Stock Receiving
+
+/*
+|--------------------------------------------------------------------------
+| Realtime Test Route
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth')->post('/realtime-test', function (Request $request) {
+
+    event(new RealtimeTestNotification(
+        userId: (int) $request->user()->id,
+        message: 'Hello! Your Laravel Reverb WebSocket is working!',
+        sentAt: now()->toISOString(),
+    ));
+
+    return response()->json([
+        'success' => true,
+        'message' => 'Broadcast queued successfully.',
+    ]);
+
+})->name('realtime-test');
+
+
+/*
+|--------------------------------------------------------------------------
+| Authenticated Routes
+|--------------------------------------------------------------------------
+*/
+
 Route::middleware('auth')->group(function () {
+
+    /*
+    |--------------------------------------------------------------------------
+    | Authentication
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/logout', [AuthController::class, 'logout'])
+        ->name('logout');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Dashboard
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/dashboard', [DashboardController::class, 'index'])
+        ->middleware('can:dashboard.view')
+        ->name('dashboard');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Products
+    |--------------------------------------------------------------------------
+    */
+
+    Route::resource('products', ProductController::class)
+        ->middlewareFor(['index', 'show'], 'can:products.view')
+        ->middlewareFor(['create', 'store'], 'can:products.create')
+        ->middlewareFor(['edit', 'update'], 'can:products.edit')
+        ->middlewareFor('destroy', 'can:products.delete');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Product Categories
+    |--------------------------------------------------------------------------
+    */
+
+    Route::resource('categories', ProductCategoryController::class)
+        ->middlewareFor(['index', 'show'], 'can:categories.view')
+        ->middlewareFor(['create', 'store'], 'can:categories.create')
+        ->middlewareFor(['edit', 'update'], 'can:categories.edit')
+        ->middlewareFor('destroy', 'can:categories.delete');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Warehouses
+    |--------------------------------------------------------------------------
+    */
+
+    Route::resource('warehouses', WarehouseController::class)
+        ->middlewareFor(['index', 'show'], 'can:warehouses.view')
+        ->middlewareFor(['create', 'store'], 'can:warehouses.create')
+        ->middlewareFor(['edit', 'update'], 'can:warehouses.edit')
+        ->middlewareFor('destroy', 'can:warehouses.delete');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Warehouse Locations
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/warehouse-locations', [WarehouseLocationController::class, 'index'])
+        ->middleware('can:warehouse-locations.manage')
+        ->name('warehouse-locations.index');
+
+    Route::post('/warehouse-locations', [WarehouseLocationController::class, 'store'])
+        ->middleware('can:warehouse-locations.manage')
+        ->name('warehouse-locations.store');
+
+    Route::put('/warehouse-locations/{warehouseLocation}', [WarehouseLocationController::class, 'update'])
+        ->middleware('can:warehouse-locations.manage')
+        ->name('warehouse-locations.update');
+
+    Route::delete('/warehouse-locations/{warehouseLocation}', [WarehouseLocationController::class, 'destroy'])
+        ->middleware('can:warehouse-locations.manage')
+        ->name('warehouse-locations.destroy');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Inventory
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/inventory', [InventoryController::class, 'index'])
+        ->middleware('can:inventory.view')
+        ->name('inventory.index');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Stock Receiving
+    |--------------------------------------------------------------------------
+    */
+
     Route::get('/stock-receiving', [StockReceivingController::class, 'create'])
+        ->middleware('can:inventory.receive')
         ->name('stock-receiving.create');
 
     Route::post('/stock-receiving', [StockReceivingController::class, 'store'])
+        ->middleware('can:inventory.receive')
         ->name('stock-receiving.store');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Stock Movements
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/stock-movements', [StockMovementController::class, 'index'])
+        ->middleware('can:stock-movements.view')
+        ->name('stock-movements.index');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Stock Transfers
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/stock-transfers/create', [StockTransferController::class, 'create'])
+        ->middleware('can:inventory.transfer')
+        ->name('stock-transfers.create');
+
+    Route::post('/stock-transfers', [StockTransferController::class, 'store'])
+        ->middleware('can:inventory.transfer')
+        ->name('stock-transfers.store');
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    */
+
+    // Notification history page
+    Route::get('/notifications', [NotificationController::class, 'history'])
+        ->name('notifications.history');
+
+    // Notification data for dropdown
+    Route::get('/notifications/data', [NotificationController::class, 'index'])
+        ->name('notifications.index');
+
+    // Unread notification count
+    Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])
+        ->name('notifications.unread-count');
+
+    // Mark all notifications as read
+    Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
+        ->name('notifications.read-all');
+
+    // Mark one notification as read
+    Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
+        ->name('notifications.read');
+
 });
-
-Route::post('/logout', [AuthController::class, 'logout'])
-    ->middleware('auth')
-    ->name('logout');
-
-// Dashboard
-Route::get('/', [DashboardController::class, 'index'])
-    ->middleware('auth')
-    ->name('dashboard');
-
-// Products
-Route::resource('products', ProductController::class);
-
-// Categories
-Route::get('/categories', [ProductCategoryController::class, 'index'])
-    ->name('categories.index');
-
-Route::post('/categories', [ProductCategoryController::class, 'store'])
-    ->name('categories.store');
-
-Route::put('/categories/{category}', [ProductCategoryController::class, 'update'])
-    ->name('categories.update');
-
-Route::delete('/categories/{category}', [ProductCategoryController::class, 'destroy'])
-    ->name('categories.destroy');
-
-// Warehouses
-Route::resource('warehouses', WarehouseController::class);
-
-// Warehouse Locations
-Route::get(
-    '/warehouses/{warehouse}/locations',
-    [WarehouseLocationController::class, 'index']
-)->name('warehouses.locations.index');
-
-Route::post(
-    '/warehouses/{warehouse}/locations',
-    [WarehouseLocationController::class, 'store']
-)->name('warehouses.locations.store');
-
-Route::put(
-    '/warehouse-locations/{location}',
-    [WarehouseLocationController::class, 'update']
-)->name('warehouse-locations.update');
-
-Route::delete(
-    '/warehouse-locations/{location}',
-    [WarehouseLocationController::class, 'destroy']
-)->name('warehouse-locations.destroy');
-
-Route::get('/_session-debug', function () {
-    $file = null;
-    $line = null;
-
-    $headersAlreadySent = headers_sent($file, $line);
-
-    return response()->json([
-        'headers_already_sent' => $headersAlreadySent,
-        'output_started_in_file' => $file,
-        'output_started_at_line' => $line,
-    ])
-    ->header('X-WMS-Debug', 'route-reached')
-    ->cookie('wms_manual_test', 'works', 120);
-});
-
-// Inventory
-Route::get('/inventory', [InventoryController::class, 'index'])
-    ->name('inventory.index');
-
-Route::get('/stock-movements', [StockMovementController::class, 'index'])
-    ->name('stock-movements.index');
-
-
-Route::get('/stock-transfers/create', [StockTransferController::class, 'create'])
-    ->name('stock-transfers.create');
-
-Route::post('/stock-transfers', [StockTransferController::class, 'store'])
-    ->name('stock-transfers.store');
