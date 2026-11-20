@@ -47,20 +47,34 @@
             <span class="nav-text">Categories</span>
         </a>
 
-<a href="{{ route('warehouses.index') }}"
-   class="nav-link {{ request()->routeIs('warehouses.*', 'warehouse-locations.*') ? 'active' : '' }}">
-    <span class="nav-icon">▣</span>
-    <span class="nav-text">Warehouses</span>
-</a>
-
-        <a href="#" class="nav-link">
-            <span class="nav-icon">⇄</span>
-            <span class="nav-text">Inventory</span>
+        <a href="{{ route('warehouses.index') }}"
+        class="nav-link {{ request()->routeIs('warehouses.*', 'warehouse-locations.*') ? 'active' : '' }}">
+            <span class="nav-icon">▣</span>
+            <span class="nav-text">Warehouses</span>
         </a>
 
-        <a href="#" class="nav-link">
+        <a href="{{ route('inventory.index') }}"
+        class="nav-link {{ request()->routeIs('inventory.*') ? 'active' : '' }}">
+            <span class="nav-icon">📦</span>
+            <span>Inventory</span>
+        </a>
+
+        <a href="{{ route('stock-receiving.create') }}"
+        class="nav-link {{ request()->routeIs('stock-receiving.*') ? 'active' : '' }}">
+            <span class="nav-icon">＋</span>
+            <span class="nav-text">Receive Stock</span>
+        </a>
+
+        <a href="{{ route('stock-movements.index') }}"
+        class="nav-link {{ request()->routeIs('stock-movements.*') ? 'active' : '' }}">
             <span class="nav-icon">⇅</span>
             <span class="nav-text">Stock Movements</span>
+        </a>
+
+        <a href="{{ route('stock-transfers.create') }}"
+        class="nav-link {{ request()->routeIs('stock-transfers.*') ? 'active' : '' }}">
+            <span class="nav-icon">⇄</span>
+            <span class="nav-text">Stock Transfer</span>
         </a>
 
         <div class="nav-label">Business Operations</div>
