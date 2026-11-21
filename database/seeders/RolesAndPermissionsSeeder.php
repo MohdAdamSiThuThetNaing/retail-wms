@@ -34,7 +34,6 @@ class RolesAndPermissionsSeeder extends Seeder
             'warehouses.create',
             'warehouses.edit',
             'warehouses.delete',
-
             'warehouse-locations.manage',
 
             // Inventory
@@ -48,7 +47,11 @@ class RolesAndPermissionsSeeder extends Seeder
 
             // Suppliers and purchase orders
             'suppliers.view',
+            'suppliers.create',
+            'suppliers.edit',
+            'suppliers.delete',
             'suppliers.manage',
+
             'purchase-orders.view',
             'purchase-orders.create',
             'purchase-orders.approve',
@@ -73,6 +76,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'settings.manage',
         ];
 
+        // Create permissions without duplicating existing records.
         foreach ($permissions as $permission) {
             Permission::firstOrCreate([
                 'name' => $permission,
@@ -80,6 +84,7 @@ class RolesAndPermissionsSeeder extends Seeder
             ]);
         }
 
+        // Role permissions.
         $roles = [
             'Super Admin' => $permissions,
 
@@ -142,6 +147,7 @@ class RolesAndPermissionsSeeder extends Seeder
             ],
         ];
 
+        // Create roles and synchronize their permissions.
         foreach ($roles as $roleName => $rolePermissions) {
             $role = Role::firstOrCreate([
                 'name' => $roleName,
@@ -154,7 +160,7 @@ class RolesAndPermissionsSeeder extends Seeder
         // Assign Super Admin to the existing administrator account.
         $admin = User::find(1);
 
-        if ($admin) {
+        if ($admin && !$admin->hasRole('Super Admin')) {
             $admin->assignRole('Super Admin');
         }
 
