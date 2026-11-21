@@ -1,0 +1,476 @@
+/* =========================================
+   CUSTOMER MANAGEMENT
+========================================= */
+
+.customer-management {
+    width: 100%;
+    color: var(--text-primary, #1f2937);
+}
+
+.customer-management .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+}
+
+.customer-management .page-header h1 {
+    margin: 0 0 6px;
+    font-size: 26px;
+    font-weight: 700;
+}
+
+.customer-management .page-header p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.customer-management .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+
+.customer-management .stat-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.customer-management .stat-label {
+    display: block;
+    color: #6b7280;
+    font-size: 13px;
+    margin-bottom: 10px;
+}
+
+.customer-management .stat-card strong {
+    display: block;
+    font-size: 25px;
+    font-weight: 700;
+    color: #111827;
+    overflow-wrap: anywhere;
+}
+
+.customer-management .content-card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+}
+
+.customer-management .content-card h2 {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0 0 22px;
+}
+
+.customer-management .filter-form {
+    display: grid;
+    grid-template-columns: minmax(220px, 2fr) repeat(2, minmax(150px, 1fr)) auto auto;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.customer-management input:not([type="checkbox"]),
+.customer-management select,
+.customer-management textarea {
+    width: 100%;
+    min-width: 0;
+    padding: 11px 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    color: #111827;
+    font: inherit;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.customer-management input:focus,
+.customer-management select:focus,
+.customer-management textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.customer-management .btn {
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.customer-management .btn-primary {
+    background: #2563eb;
+    color: #fff;
+}
+
+.customer-management .btn-primary:hover {
+    background: #1d4ed8;
+}
+
+.customer-management .btn-secondary {
+    background: #f3f4f6;
+    color: #374151;
+    border-color: #e5e7eb;
+}
+
+.customer-management .btn-secondary:hover {
+    background: #e5e7eb;
+}
+
+.customer-management .table-responsive {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.customer-management .data-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    text-align: left;
+}
+
+.customer-management .data-table th {
+    padding: 13px 14px;
+    background: #f9fafb;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.customer-management .data-table td {
+    padding: 15px 14px;
+    border-bottom: 1px solid #f0f1f3;
+    vertical-align: middle;
+}
+
+.customer-management .data-table tbody tr:hover {
+    background: #f9fafb;
+}
+
+.customer-management .data-table td strong {
+    color: #111827;
+}
+
+.customer-management .data-table small {
+    color: #6b7280;
+}
+
+.customer-management .data-table a {
+    display: inline-block;
+    margin: 2px 8px 2px 0;
+    color: #2563eb;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.customer-management .data-table a:hover {
+    text-decoration: underline;
+}
+
+.customer-management .link-button {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: #dc2626;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.customer-management .status-badge {
+    display: inline-block;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.customer-management .status-badge.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.customer-management .status-badge.inactive {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.customer-management .empty-state {
+    padding: 35px !important;
+    text-align: center;
+    color: #6b7280;
+}
+
+.customer-management .pagination-wrapper {
+    margin-top: 22px;
+}
+
+/* Forms */
+
+.customer-management .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px;
+}
+
+.customer-management .form-group {
+    min-width: 0;
+}
+
+.customer-management .form-group label {
+    display: block;
+    margin-bottom: 8px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.customer-management .form-group.full-width,
+.customer-management .full-width {
+    grid-column: 1 / -1;
+}
+
+.customer-management .form-group textarea {
+    resize: vertical;
+    min-height: 90px;
+}
+
+.customer-management .form-group input[type="checkbox"] {
+    width: auto;
+    margin-right: 7px;
+    accent-color: #2563eb;
+}
+
+.customer-management .error-text {
+    display: block;
+    margin-top: 5px;
+    color: #dc2626;
+    font-size: 12px;
+}
+
+.customer-management .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 25px;
+    padding-top: 20px;
+    border-top: 1px solid #e5e7eb;
+}
+
+/* Customer profile */
+
+.customer-management .detail-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 24px;
+}
+
+.customer-management .detail-grid > div {
+    min-width: 0;
+}
+
+.customer-management .detail-label {
+    display: block;
+    margin-bottom: 7px;
+    color: #6b7280;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.customer-management .detail-grid strong {
+    display: block;
+    color: #111827;
+    font-size: 14px;
+    font-weight: 500;
+    overflow-wrap: anywhere;
+}
+
+.customer-management .header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* Responsive */
+
+@media (max-width: 1000px) {
+    .customer-management .stats-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .customer-management .filter-form {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 600px) {
+    .customer-management .stats-grid,
+    .customer-management .form-grid,
+    .customer-management .detail-grid,
+    .customer-management .filter-form {
+        grid-template-columns: 1fr;
+    }
+
+    .customer-management .content-card {
+        padding: 16px;
+    }
+
+    .customer-management .page-header h1 {
+        font-size: 22px;
+    }
+
+    .customer-management .form-actions {
+        flex-direction: column;
+    }
+
+    .customer-management .form-actions .btn {
+        width: 100%;
+    }
+}
+
+/* =========================================
+   CUSTOMER CREATE / EDIT FORM
+========================================= */
+
+.customer-management .customer-form-card {
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 30px;
+    margin-top: 20px;
+    box-shadow: 0 4px 15px rgba(15, 23, 42, 0.04);
+}
+
+.customer-management .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 28px;
+    row-gap: 22px;
+}
+
+.customer-management .form-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.customer-management .form-group label {
+    display: block;
+    margin-bottom: 9px;
+    color: #374151;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.customer-management .form-group input:not([type="checkbox"]),
+.customer-management .form-group select,
+.customer-management .form-group textarea {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    padding: 11px 13px;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #1f2937;
+    font-family: inherit;
+    font-size: 14px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.customer-management .form-group textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+.customer-management .form-group input:focus,
+.customer-management .form-group select:focus,
+.customer-management .form-group textarea:focus {
+    outline: none;
+    border-color: #6257e5;
+    box-shadow: 0 0 0 3px rgba(98, 87, 229, 0.12);
+}
+
+.customer-management .form-group input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #6257e5;
+    cursor: pointer;
+}
+
+.customer-management .form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.customer-management .form-group.full-width > label {
+    margin-bottom: 9px;
+}
+
+.customer-management .form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 28px;
+    padding-top: 22px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.customer-management .form-actions .btn {
+    min-width: 120px;
+    min-height: 42px;
+}
+
+.customer-management .error-text {
+    color: #dc2626;
+    font-size: 12px;
+    margin-top: 6px;
+}
+
+@media (max-width: 700px) {
+    .customer-management .customer-form-card {
+        padding: 18px;
+    }
+
+    .customer-management .form-grid {
+        grid-template-columns: 1fr;
+        row-gap: 18px;
+    }
+
+    .customer-management .form-actions {
+        flex-direction: column;
+    }
+
+    .customer-management .form-actions .btn {
+        width: 100%;
+    }
+}
