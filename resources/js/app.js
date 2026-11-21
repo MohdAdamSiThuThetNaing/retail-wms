@@ -258,6 +258,18 @@ function initializeRealtime() {
         }
     });
 
+    // Listen for custom Reverb test events
+    channel.listen(".realtime.notification", (event) => {
+        console.log("Realtime test event received:", event);
+
+        if (messageBox) {
+            const message = document.createElement("p");
+            message.textContent = event.message || "WebSocket test received!";
+
+            messageBox.prepend(message);
+        }
+    });
+
     // Monitor Reverb connection state
     const connection = window.Echo.connector.pusher.connection;
 
