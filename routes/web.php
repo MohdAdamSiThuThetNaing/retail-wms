@@ -16,6 +16,11 @@ use App\Http\Controllers\StockReceivingController;
 use App\Http\Controllers\StockMovementController;
 use App\Http\Controllers\StockTransferController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\SupplierController;
+use App\Http\Controllers\PurchaseOrderController;
+use App\Http\Controllers\PurchaseOrderApprovalController;
+use App\Http\Controllers\PurchaseOrderReceivingController;
+use App\Http\Controllers\CustomerController;
 
 /*
 |--------------------------------------------------------------------------
@@ -32,7 +37,6 @@ Route::middleware('guest')->group(function () {
         ->name('login.store');
 
 });
-
 
 /*
 |--------------------------------------------------------------------------
@@ -55,7 +59,6 @@ Route::middleware('auth')->post('/realtime-test', function (Request $request) {
 
 })->name('realtime-test');
 
-
 /*
 |--------------------------------------------------------------------------
 | Authenticated Routes
@@ -73,7 +76,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])
         ->name('logout');
 
-
     /*
     |--------------------------------------------------------------------------
     | Dashboard
@@ -83,7 +85,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->middleware('can:dashboard.view')
         ->name('dashboard');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -97,7 +98,6 @@ Route::middleware('auth')->group(function () {
         ->middlewareFor(['edit', 'update'], 'can:products.edit')
         ->middlewareFor('destroy', 'can:products.delete');
 
-
     /*
     |--------------------------------------------------------------------------
     | Product Categories
@@ -110,7 +110,6 @@ Route::middleware('auth')->group(function () {
         ->middlewareFor(['edit', 'update'], 'can:categories.edit')
         ->middlewareFor('destroy', 'can:categories.delete');
 
-
     /*
     |--------------------------------------------------------------------------
     | Warehouses
@@ -122,7 +121,6 @@ Route::middleware('auth')->group(function () {
         ->middlewareFor(['create', 'store'], 'can:warehouses.create')
         ->middlewareFor(['edit', 'update'], 'can:warehouses.edit')
         ->middlewareFor('destroy', 'can:warehouses.delete');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -146,7 +144,6 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:warehouse-locations.manage')
         ->name('warehouse-locations.destroy');
 
-
     /*
     |--------------------------------------------------------------------------
     | Inventory
@@ -156,7 +153,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/inventory', [InventoryController::class, 'index'])
         ->middleware('can:inventory.view')
         ->name('inventory.index');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -172,7 +168,6 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:inventory.receive')
         ->name('stock-receiving.store');
 
-
     /*
     |--------------------------------------------------------------------------
     | Stock Movements
@@ -182,7 +177,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/stock-movements', [StockMovementController::class, 'index'])
         ->middleware('can:stock-movements.view')
         ->name('stock-movements.index');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -198,6 +192,61 @@ Route::middleware('auth')->group(function () {
         ->middleware('can:inventory.transfer')
         ->name('stock-transfers.store');
 
+    /*
+    |--------------------------------------------------------------------------
+    | Supplier Management
+    |--------------------------------------------------------------------------
+    */
+
+    Route::resource('suppliers', SupplierController::class)
+        ->middlewareFor(['index', 'show'], 'can:suppliers.view')
+        ->middlewareFor(['create', 'store'], 'can:suppliers.create')
+        ->middlewareFor(['edit', 'update'], 'can:suppliers.edit')
+        ->middlewareFor('destroy', 'can:suppliers.delete');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Purchase Order Management
+    |--------------------------------------------------------------------------
+    */
+
+    Route::resource('purchase-orders', PurchaseOrderController::class)
+        ->except(['destroy'])
+        ->middlewareFor(['index', 'show'], 'can:purchase-orders.view')
+        ->middlewareFor(['create', 'store'], 'can:purchase-orders.create')
+        ->middlewareFor(['edit', 'update'], 'can:purchase-orders.create');
+
+    Route::post('/purchase-orders/{purchaseOrder}/submit', [PurchaseOrderController::class, 'submit'])
+        ->middleware('can:purchase-orders.create')
+        ->name('purchase-orders.submit');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Purchase Order Approval
+    |--------------------------------------------------------------------------
+    */
+
+    Route::post('/purchase-orders/{purchaseOrder}/approve', [PurchaseOrderApprovalController::class, 'approve'])
+        ->middleware('can:purchase-orders.approve')
+        ->name('purchase-orders.approve');
+
+    Route::post('/purchase-orders/{purchaseOrder}/reject', [PurchaseOrderApprovalController::class, 'reject'])
+        ->middleware('can:purchase-orders.approve')
+        ->name('purchase-orders.reject');
+
+    /*
+    |--------------------------------------------------------------------------
+    | Purchase Order Receiving
+    |--------------------------------------------------------------------------
+    */
+
+    Route::get('/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderReceivingController::class, 'create'])
+        ->middleware('can:inventory.receive')
+        ->name('purchase-orders.receive.create');
+
+    Route::post('/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderReceivingController::class, 'store'])
+        ->middleware('can:inventory.receive')
+        ->name('purchase-orders.receive.store');
 
     /*
     |--------------------------------------------------------------------------
@@ -205,24 +254,32 @@ Route::middleware('auth')->group(function () {
     |--------------------------------------------------------------------------
     */
 
-    // Notification history page
     Route::get('/notifications', [NotificationController::class, 'history'])
         ->name('notifications.history');
 
-    // Notification data for dropdown
     Route::get('/notifications/data', [NotificationController::class, 'index'])
         ->name('notifications.index');
 
-    // Unread notification count
     Route::get('/notifications/unread-count', [NotificationController::class, 'unreadCount'])
         ->name('notifications.unread-count');
 
-    // Mark all notifications as read
     Route::patch('/notifications/read-all', [NotificationController::class, 'markAllAsRead'])
         ->name('notifications.read-all');
 
-    // Mark one notification as read
     Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead'])
         ->name('notifications.read');
 
 });
+
+/*
+|--------------------------------------------------------------------------
+| Customer Management
+|--------------------------------------------------------------------------
+*/
+
+Route::resource('customers', CustomerController::class)
+    ->middlewareFor(['index', 'show'], 'can:customers.view')
+    ->middlewareFor(
+        ['create', 'store', 'edit', 'update', 'destroy'],
+        'can:customers.manage'
+    );
