@@ -12,9 +12,12 @@ class ProductController extends Controller
 {
     public function index(Request $request)
     {
+        // Product catalog with aggregated inventory quantities.
         $query = Product::with('category')
-            ->withSum('stocks', 'quantity');
+            ->withSum('stocks', 'quantity')
+            ->withSum('stocks', 'reorder_level');
 
+        // Search products.
         if ($request->filled('q')) {
             $search = $request->q;
 
@@ -26,10 +29,12 @@ class ProductController extends Controller
             });
         }
 
+        // Filter by category.
         if ($request->filled('category_id')) {
             $query->where('category_id', $request->category_id);
         }
 
+        // Filter by product status.
         if ($request->status === 'active') {
             $query->where('is_active', true);
         } elseif ($request->status === 'inactive') {
@@ -40,14 +45,42 @@ class ProductController extends Controller
             ->paginate(15)
             ->withQueryString();
 
+        // Active product categories.
         $categories = ProductCategory::where('is_active', true)
             ->orderBy('name')
             ->get();
 
+        // Inventory statistics across ALL products and warehouses.
+        $inventoryProducts = Product::query()
+            ->withSum('stocks', 'quantity')
+            ->withSum('stocks', 'reorder_level')
+            ->get();
+
         $stats = [
             'total' => Product::count(),
+
             'active' => Product::where('is_active', true)->count(),
+
             'inactive' => Product::where('is_active', false)->count(),
+
+            'total_units' => (int) $inventoryProducts->sum(
+                fn ($product) => (int) ($product->stocks_sum_quantity ?? 0)
+            ),
+
+            'low_stock' => $inventoryProducts->filter(
+                function ($product) {
+                    $quantity = (int) ($product->stocks_sum_quantity ?? 0);
+                    $reorderLevel = (int) ($product->stocks_sum_reorder_level ?? 0);
+
+                    return $quantity > 0
+                        && $quantity <= $reorderLevel;
+                }
+            )->count(),
+
+            'out_of_stock' => $inventoryProducts->filter(
+                fn ($product) =>
+                    (int) ($product->stocks_sum_quantity ?? 0) <= 0
+            )->count(),
         ];
 
         return view('products.index', compact(
