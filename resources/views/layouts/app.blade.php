@@ -6,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token() }}">
     <meta name="user-id" content="{{ auth()->id() }}">
+    <link rel="stylesheet" href="{{ asset('css/customers.css') }}">
 
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 
@@ -116,23 +117,26 @@
             <div class="nav-label">Business Operations</div>
 
             @can('suppliers.view')
-                <a href="#" class="nav-link">
-                    <span class="nav-icon">♧</span>
+                <a href="{{ route('suppliers.index') }}"
+                class="nav-link {{ request()->routeIs('suppliers.*') ? 'active' : '' }}">
+                    <span class="nav-icon">▣</span>
                     <span class="nav-text">Suppliers</span>
                 </a>
             @endcan
 
             @can('purchase-orders.view')
-                <a href="#" class="nav-link">
+                <a href="{{ route('purchase-orders.index') }}"
+                class="nav-link {{ request()->routeIs('purchase-orders.*') ? 'active' : '' }}">
                     <span class="nav-icon">🛒</span>
                     <span class="nav-text">Purchase Orders</span>
                 </a>
             @endcan
 
             @can('customers.view')
-                <a href="#" class="nav-link">
-                    <span class="nav-icon">♙</span>
-                    <span class="nav-text">Customers</span>
+                <a href="{{ route('customers.index') }}"
+                class="nav-link {{ request()->routeIs('customers.*') ? 'active' : '' }}">
+                    <span class="nav-icon">👥</span>
+                    <span>Customers</span>
                 </a>
             @endcan
 
@@ -261,13 +265,6 @@
             <section id="realtime-demo"
                      class="panel"
                      style="margin-top: 24px; padding: 24px;">
-
-                <div class="panel-header">
-                    <div>
-                        <h2>Real-Time WebSocket Demo</h2>
-                        <p>Laravel Reverb + Echo + Redis + Horizon</p>
-                    </div>
-                </div>
 
                 <div style="margin-top: 16px;">
 
