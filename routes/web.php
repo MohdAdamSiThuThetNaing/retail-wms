@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -21,6 +22,7 @@ use App\Http\Controllers\PurchaseOrderController;
 use App\Http\Controllers\PurchaseOrderApprovalController;
 use App\Http\Controllers\PurchaseOrderReceivingController;
 use App\Http\Controllers\CustomerController;
+use App\Http\Controllers\SalesOrderController;
 
 /*
 |--------------------------------------------------------------------------
@@ -250,6 +252,54 @@ Route::middleware('auth')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
+    | Customer Management
+    |--------------------------------------------------------------------------
+    */
+
+    Route::resource('customers', CustomerController::class)
+        ->middlewareFor(['index', 'show'], 'can:customers.view')
+        ->middlewareFor(
+            ['create', 'store', 'edit', 'update', 'destroy'],
+            'can:customers.manage'
+        );
+
+    /*
+    |--------------------------------------------------------------------------
+    | Sales Order Management
+    |--------------------------------------------------------------------------
+    */
+
+    Route::resource('sales-orders', SalesOrderController::class)
+        ->except(['destroy'])
+        ->parameters(['sales-orders' => 'salesOrder'])
+        ->middlewareFor(['index', 'show'], 'can:sales-orders.view')
+        ->middlewareFor(
+            ['create', 'store', 'edit', 'update'],
+            'can:sales-orders.create'
+        );
+
+    Route::delete('/sales-orders/{salesOrder}', [SalesOrderController::class, 'destroy'])
+        ->middleware('can:sales-orders.create')
+        ->name('sales-orders.destroy');
+
+    Route::post('/sales-orders/{salesOrder}/confirm', [SalesOrderController::class, 'confirm'])
+        ->middleware('can:sales-orders.manage')
+        ->name('sales-orders.confirm');
+
+    Route::post('/sales-orders/{salesOrder}/processing', [SalesOrderController::class, 'startProcessing'])
+        ->middleware('can:sales-orders.manage')
+        ->name('sales-orders.processing');
+
+    Route::post('/sales-orders/{salesOrder}/complete', [SalesOrderController::class, 'complete'])
+        ->middleware('can:sales-orders.manage')
+        ->name('sales-orders.complete');
+
+    Route::post('/sales-orders/{salesOrder}/cancel', [SalesOrderController::class, 'cancel'])
+        ->middleware('can:sales-orders.manage')
+        ->name('sales-orders.cancel');
+
+    /*
+    |--------------------------------------------------------------------------
     | Notifications
     |--------------------------------------------------------------------------
     */
@@ -270,16 +320,3 @@ Route::middleware('auth')->group(function () {
         ->name('notifications.read');
 
 });
-
-/*
-|--------------------------------------------------------------------------
-| Customer Management
-|--------------------------------------------------------------------------
-*/
-
-Route::resource('customers', CustomerController::class)
-    ->middlewareFor(['index', 'show'], 'can:customers.view')
-    ->middlewareFor(
-        ['create', 'store', 'edit', 'update', 'destroy'],
-        'can:customers.manage'
-    );
