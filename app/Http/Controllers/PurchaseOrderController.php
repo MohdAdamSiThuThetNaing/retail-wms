@@ -6,10 +6,10 @@ use App\Models\PurchaseOrder;
 use App\Models\Product;
 use App\Models\Supplier;
 use App\Models\Warehouse;
+use App\Services\NotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
-use App\Services\NotificationService;
 
 class PurchaseOrderController extends Controller
 {
@@ -82,8 +82,10 @@ class PurchaseOrderController extends Controller
     /**
      * Store a new draft purchase order.
      */
-    public function store(Request $request)
-    {
+    public function store(
+        Request $request,
+        NotificationService $notifications
+    ) {
         $data = $request->validate([
             'supplier_id' => ['required', 'integer', 'exists:suppliers,id'],
             'warehouse_id' => ['required', 'integer', 'exists:warehouses,id'],
@@ -104,7 +106,11 @@ class PurchaseOrderController extends Controller
             (int) $data['warehouse_id']
         );
 
-        return DB::transaction(function () use ($data, $request) {
+        return DB::transaction(function () use (
+            $data,
+            $request,
+            $notifications
+        ) {
             $productIds = collect($data['items'])
                 ->pluck('product_id')
                 ->map(fn ($id) => (int) $id);
@@ -162,6 +168,36 @@ class PurchaseOrderController extends Controller
                 ]);
             }
 
+            $purchaseOrderId = $purchaseOrder->id;
+
+            DB::afterCommit(function () use (
+                $notifications,
+                $purchaseOrderId
+            ) {
+                $po = PurchaseOrder::find($purchaseOrderId);
+
+                if (!$po) {
+                    return;
+                }
+
+                $notifications->notifyPermissions(
+                    permissions: [
+                        'purchase-orders.view',
+                        'purchase-orders.approve',
+                    ],
+                    category: 'purchase',
+                    title: 'New Purchase Order Created',
+                    message: "Purchase Order {$po->po_number} has been created.",
+                    url: route('purchase-orders.show', $po),
+                    metadata: [
+                        'purchase_order_id' => $po->id,
+                        'po_number' => $po->po_number,
+                        'status' => $po->status,
+                        'action' => 'created',
+                    ]
+                );
+            });
+
             return redirect()
                 ->route('purchase-orders.show', $purchaseOrder)
                 ->with('success', 'Purchase order created successfully.');
@@ -217,8 +253,11 @@ class PurchaseOrderController extends Controller
     /**
      * Update a draft or rejected PO.
      */
-    public function update(Request $request, PurchaseOrder $purchaseOrder)
-    {
+    public function update(
+        Request $request,
+        PurchaseOrder $purchaseOrder,
+        NotificationService $notifications
+    ) {
         $this->ensureEditable($purchaseOrder);
 
         $data = $request->validate([
@@ -241,7 +280,11 @@ class PurchaseOrderController extends Controller
             (int) $data['warehouse_id']
         );
 
-        return DB::transaction(function () use ($data, $purchaseOrder) {
+        return DB::transaction(function () use (
+            $data,
+            $purchaseOrder,
+            $notifications
+        ) {
             $purchaseOrder = PurchaseOrder::whereKey($purchaseOrder->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -303,6 +346,36 @@ class PurchaseOrderController extends Controller
                 ]);
             }
 
+            $purchaseOrderId = $purchaseOrder->id;
+
+            DB::afterCommit(function () use (
+                $notifications,
+                $purchaseOrderId
+            ) {
+                $po = PurchaseOrder::find($purchaseOrderId);
+
+                if (!$po) {
+                    return;
+                }
+
+                $notifications->notifyPermissions(
+                    permissions: [
+                        'purchase-orders.view',
+                        'purchase-orders.approve',
+                    ],
+                    category: 'purchase',
+                    title: 'Purchase Order Updated',
+                    message: "Purchase Order {$po->po_number} has been updated.",
+                    url: route('purchase-orders.show', $po),
+                    metadata: [
+                        'purchase_order_id' => $po->id,
+                        'po_number' => $po->po_number,
+                        'status' => $po->status,
+                        'action' => 'updated',
+                    ]
+                );
+            });
+
             return redirect()
                 ->route('purchase-orders.show', $purchaseOrder)
                 ->with('success', 'Purchase order updated successfully.');
@@ -312,7 +385,6 @@ class PurchaseOrderController extends Controller
     /**
      * Submit a draft or rejected PO for approval.
      */
-
     public function submit(
         PurchaseOrder $purchaseOrder,
         NotificationService $notifications
@@ -381,7 +453,6 @@ class PurchaseOrderController extends Controller
                 ->with('success', 'Purchase order submitted for approval.');
         });
     }
-
 
     /**
      * Delete a draft or rejected PO.
