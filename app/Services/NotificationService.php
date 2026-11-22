@@ -1,10 +1,10 @@
 <?php
+
 namespace App\Services;
 
 use App\Models\User;
 use App\Notifications\WmsNotification;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Collection;
 
 class NotificationService
 {
@@ -16,6 +16,10 @@ class NotificationService
         ?string $url = null,
         array $metadata = [],
     ): void {
+        if (!$user->is_active) {
+            return;
+        }
+
         $user->notify(
             new WmsNotification(
                 $category,
@@ -34,9 +38,14 @@ class NotificationService
         string $message,
         ?string $url = null,
         array $metadata = [],
+        ?int $exceptUserId = null,
     ): void {
         foreach ($users as $user) {
-            if ($user instanceof User) {
+            if (
+                $user instanceof User
+                && $user->is_active
+                && $user->id !== $exceptUserId
+            ) {
                 $this->notifyUser(
                     $user,
                     $category,
@@ -56,8 +65,10 @@ class NotificationService
         string $message,
         ?string $url = null,
         array $metadata = [],
+        ?int $exceptUserId = null,
     ): void {
         $users = User::query()
+            ->where('is_active', true)
             ->whereHas('roles', fn (Builder $query) =>
                 $query->whereIn('name', $roles)
             )
@@ -69,7 +80,8 @@ class NotificationService
             $title,
             $message,
             $url,
-            $metadata
+            $metadata,
+            $exceptUserId
         );
     }
 
@@ -80,14 +92,19 @@ class NotificationService
         string $message,
         ?string $url = null,
         array $metadata = [],
+        ?int $exceptUserId = null,
     ): void {
         $users = User::query()
-            ->whereHas('roles.permissions', fn (Builder $query) =>
-                $query->whereIn('name', $permissions)
-            )
-            ->orWhereHas('permissions', fn (Builder $query) =>
-                $query->whereIn('name', $permissions)
-            )
+            ->where('is_active', true)
+            ->where(function (Builder $query) use ($permissions) {
+                $query
+                    ->whereHas('roles.permissions', fn (Builder $roleQuery) =>
+                        $roleQuery->whereIn('name', $permissions)
+                    )
+                    ->orWhereHas('permissions', fn (Builder $permissionQuery) =>
+                        $permissionQuery->whereIn('name', $permissions)
+                    );
+            })
             ->distinct()
             ->get();
 
@@ -97,7 +114,8 @@ class NotificationService
             $title,
             $message,
             $url,
-            $metadata
+            $metadata,
+            $exceptUserId
         );
     }
 
@@ -109,7 +127,9 @@ class NotificationService
         array $metadata = [],
     ): void {
         $this->notifyUsers(
-            User::query()->get(),
+            User::query()
+                ->where('is_active', true)
+                ->get(),
             $category,
             $title,
             $message,
