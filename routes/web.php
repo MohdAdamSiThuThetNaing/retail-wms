@@ -1,4 +1,3 @@
-
 <?php
 
 use Illuminate\Support\Facades\Route;
@@ -23,6 +22,7 @@ use App\Http\Controllers\PurchaseOrderApprovalController;
 use App\Http\Controllers\PurchaseOrderReceivingController;
 use App\Http\Controllers\CustomerController;
 use App\Http\Controllers\SalesOrderController;
+use App\Http\Controllers\UserController;
 
 /*
 |--------------------------------------------------------------------------
@@ -297,6 +297,18 @@ Route::middleware('auth')->group(function () {
     Route::post('/sales-orders/{salesOrder}/cancel', [SalesOrderController::class, 'cancel'])
         ->middleware('can:sales-orders.manage')
         ->name('sales-orders.cancel');
+
+    /*
+    |--------------------------------------------------------------------------
+    | User Management
+    |--------------------------------------------------------------------------
+    */
+
+    Route::resource('users', UserController::class)
+        ->middlewareFor(['index', 'show'], 'can:users.view')
+        ->middlewareFor(['create', 'store'], 'can:users.create')
+        ->middlewareFor(['edit', 'update'], 'can:users.edit')
+        ->middlewareFor('destroy', 'can:users.delete');
 
     /*
     |--------------------------------------------------------------------------

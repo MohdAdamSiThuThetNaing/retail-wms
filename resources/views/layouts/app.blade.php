@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="{{ asset('css/notifications.css') }}">
     <link rel="stylesheet" href="{{ asset('css/customers.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sales-orders.css') }}">
+    <link rel="stylesheet" href="{{ asset('css/users.css') }}">
 
     @stack('styles')
 </head>
@@ -192,20 +193,27 @@
         @endif
 
         {{-- =========================================
-             MANAGEMENT
+            MANAGEMENT
         ========================================== --}}
 
         @if(auth()->user()->hasAnyPermission([
+            'users.view',
+            'users.create',
+            'users.edit',
+            'users.delete',
             'roles.manage',
             'settings.manage'
         ]))
 
             <div class="nav-label">Management</div>
 
-            @can('roles.manage')
-                <a href="#" class="nav-link">
+            @can('users.view')
+                <a
+                    href="{{ route('users.index') }}"
+                    class="nav-link {{ request()->routeIs('users.*') ? 'active' : '' }}"
+                >
                     <span class="nav-icon">♙</span>
-                    <span class="nav-text">Users & Roles</span>
+                    <span class="nav-text">Users</span>
                 </a>
             @endcan
 
@@ -220,7 +228,7 @@
 
         {{-- Sidebar Footer --}}
         <div class="sidebar-bottom">
-            <div class="brand-sub">RETAIL WMS · VERSION 1.0</div>
+            <div class="brand-sub">RETAIL WMS</div>
             <p>Enterprise inventory and warehouse management.</p>
         </div>
 
