@@ -232,28 +232,29 @@ function initializeRealtime() {
     channel.notification((notification) => {
         console.log("Real-time WMS notification:", notification);
 
+        // Laravel broadcasts notification data inside notification.data.
+        const payload = notification.data || notification;
+
         notificationItems.unshift({
             id: notification.id,
-            category: notification.category || "system",
-            title: notification.title || "Notification",
-            message: notification.message || "",
-            url: notification.url || null,
-            metadata: notification.metadata || {},
+            category: payload.category || "system",
+            title: payload.title || "Notification",
+            message: payload.message || "",
+            url: payload.url || null,
+            metadata: payload.metadata || {},
             read_at: null,
-            created_at: notification.created_at || new Date().toISOString(),
+            created_at: payload.created_at || new Date().toISOString(),
         });
 
         notificationItems = notificationItems.slice(0, 30);
 
         updateBadge(unreadCount + 1);
         renderNotifications();
-
         refreshUnreadCount();
 
         if (messageBox) {
             const message = document.createElement("p");
-            message.textContent = notification.title || "New notification";
-
+            message.textContent = payload.title || "New notification";
             messageBox.prepend(message);
         }
     });

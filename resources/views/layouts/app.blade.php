@@ -30,6 +30,10 @@
     <link rel="stylesheet" href="{{ asset('css/customers.css') }}">
     <link rel="stylesheet" href="{{ asset('css/sales-orders.css') }}">
     <link rel="stylesheet" href="{{ asset('css/users.css') }}">
+    <link
+    rel="stylesheet"
+    href="{{ asset('css/notifications.css') }}?v={{ filemtime(public_path('css/notifications.css')) }}"
+>
 
     @stack('styles')
 </head>
