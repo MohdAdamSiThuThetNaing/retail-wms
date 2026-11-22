@@ -12,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use App\Services\NotificationService;
 
 class SalesOrderController extends Controller
 {
@@ -89,7 +90,10 @@ class SalesOrderController extends Controller
     /**
      * Store a new draft sales order.
      */
-    public function store(Request $request)
+    public function store(
+        Request $request,
+        NotificationService $notifications
+    )
     {
         $data = $this->validateOrder($request);
 
@@ -98,7 +102,11 @@ class SalesOrderController extends Controller
             (int) $data['warehouse_id']
         );
 
-        return DB::transaction(function () use ($data, $request) {
+        return DB::transaction(function () use (
+            $data,
+            $request,
+            $notifications
+        ) {
             $products = $this->getActiveProducts($data['items']);
 
             $items = $this->prepareItems($data['items'], $products);
@@ -136,6 +144,39 @@ class SalesOrderController extends Controller
                 'Sales order created.',
                 $request->user()->id
             );
+
+            $salesOrderId = $salesOrder->id;
+            $actorId = $request->user()->id;
+
+            DB::afterCommit(function () use (
+                $notifications,
+                $salesOrderId,
+                $actorId
+            ) {
+                $order = SalesOrder::find($salesOrderId);
+
+                if (!$order) {
+                    return;
+                }
+
+                $notifications->notifyPermissions(
+                    permissions: [
+                        'sales-orders.view',
+                        'sales-orders.manage',
+                    ],
+                    category: 'sales',
+                    title: 'New Sales Order Created',
+                    message: "Sales Order {$order->order_number} has been created.",
+                    url: route('sales-orders.show', $order),
+                    metadata: [
+                        'sales_order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'status' => $order->status,
+                        'action' => 'created',
+                    ],
+                    exceptUserId: $actorId
+                );
+            });
 
             return redirect()
                 ->route('sales-orders.show', $salesOrder)
@@ -192,7 +233,11 @@ class SalesOrderController extends Controller
     /**
      * Update a draft sales order.
      */
-    public function update(Request $request, SalesOrder $salesOrder)
+    public function update(
+        Request $request,
+        SalesOrder $salesOrder,
+        NotificationService $notifications
+    )
     {
         $data = $this->validateOrder($request);
 
@@ -201,7 +246,12 @@ class SalesOrderController extends Controller
             (int) $data['warehouse_id']
         );
 
-        return DB::transaction(function () use ($data, $salesOrder) {
+        return DB::transaction(function () use (
+            $data,
+            $salesOrder,
+            $notifications,
+            $request
+        ) {
             $salesOrder = SalesOrder::whereKey($salesOrder->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -236,6 +286,39 @@ class SalesOrderController extends Controller
             foreach ($items as $item) {
                 $salesOrder->items()->create($item);
             }
+
+            $salesOrderId = $salesOrder->id;
+            $actorId = $request->user()->id;
+
+            DB::afterCommit(function () use (
+                $notifications,
+                $salesOrderId,
+                $actorId
+            ) {
+                $order = SalesOrder::find($salesOrderId);
+
+                if (!$order) {
+                    return;
+                }
+
+                $notifications->notifyPermissions(
+                    permissions: [
+                        'sales-orders.view',
+                        'sales-orders.manage',
+                    ],
+                    category: 'sales',
+                    title: 'Sales Order Updated',
+                    message: "Sales Order {$order->order_number} has been updated.",
+                    url: route('sales-orders.show', $order),
+                    metadata: [
+                        'sales_order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'status' => $order->status,
+                        'action' => 'updated',
+                    ],
+                    exceptUserId: $actorId
+                );
+            });
 
             return redirect()
                 ->route('sales-orders.show', $salesOrder)
@@ -324,16 +407,19 @@ class SalesOrderController extends Controller
         });
     }
 
+
     /**
-     * Complete fulfillment and deduct inventory.
+     * Complete fulfillment, deduct inventory, and notify users.
      */
     public function complete(
         SalesOrder $salesOrder,
-        InventoryService $inventoryService
+        InventoryService $inventoryService,
+        NotificationService $notifications
     ) {
         return DB::transaction(function () use (
             $salesOrder,
-            $inventoryService
+            $inventoryService,
+            $notifications
         ) {
             $salesOrder = SalesOrder::whereKey($salesOrder->id)
                 ->lockForUpdate()
@@ -387,11 +473,41 @@ class SalesOrderController extends Controller
                 auth()->id()
             );
 
+            // Notify users only after the transaction commits.
+            DB::afterCommit(function () use ($salesOrder, $notifications) {
+                $order = SalesOrder::find($salesOrder->id);
+
+                if (!$order) {
+                    return;
+                }
+
+                $notifications->notifyPermissions(
+                    permissions: [
+                        'sales-orders.view',
+                        'sales-orders.manage',
+                    ],
+                    category: 'sales',
+                    title: 'Sales Order Completed',
+                    message: "Sales Order {$order->order_number} has been completed and inventory deducted.",
+                    url: route('sales-orders.show', $order),
+                    metadata: [
+                        'sales_order_id' => $order->id,
+                        'order_number' => $order->order_number,
+                        'status' => $order->status,
+                        'action' => 'completed',
+                    ]
+                );
+            });
+
             return redirect()
                 ->route('sales-orders.show', $salesOrder)
-                ->with('success', 'Sales order completed and inventory deducted successfully.');
+                ->with(
+                    'success',
+                    'Sales order completed and inventory deducted successfully.'
+                );
         }, attempts: 3);
     }
+
 
     /**
      * Cancel an eligible sales order.

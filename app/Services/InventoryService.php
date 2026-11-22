@@ -73,6 +73,57 @@ class InventoryService
         return $stock;
     }
 
+    /**
+     * Issue stock from a warehouse.
+     */
+    public function issue(
+        Warehouse $warehouse,
+        Product $product,
+        int $quantity,
+        ?int $actorId = null,
+        ?string $reference = null
+    ): WarehouseStock {
+        if ($quantity < 1) {
+            throw ValidationException::withMessages([
+                'quantity' => 'Quantity must be at least 1.',
+            ]);
+        }
+
+        $stock = DB::transaction(function () use (
+            $warehouse, $product, $quantity, $actorId, $reference
+        ) {
+            $stock = WarehouseStock::query()
+                ->where('warehouse_id', $warehouse->id)
+                ->where('product_id', $product->id)
+                ->lockForUpdate()
+                ->first();
+
+            if (!$stock || $stock->quantity < $quantity) {
+                throw ValidationException::withMessages([
+                    'quantity' => 'Insufficient stock in the selected warehouse.',
+                ]);
+            }
+
+            $stock->decrement('quantity', $quantity);
+
+            InventoryMovement::create([
+                'product_id' => $product->id,
+                'warehouse_id' => $warehouse->id,
+                'type' => 'issue',
+                'quantity' => $quantity,
+                'reference' => $reference,
+                'created_by' => $actorId,
+                'created_at' => now(),
+            ]);
+
+            return $stock->refresh();
+        }, attempts: 3);
+
+        $this->broadcastStockUpdate($stock, 'issue', $reference);
+
+        return $stock;
+    }
+
     public function transfer(
         Warehouse $from,
         Warehouse $to,
