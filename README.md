@@ -1,682 +1,402 @@
 # Retail WMS — Enterprise Retail & Warehouse Management System
 
-A modular, web-based Retail and Warehouse Management System built with **Laravel 12**, designed to manage products, inventory, warehouse operations, procurement, sales, customers, and user access within a centralized platform.
+A modular, web-based **Retail and Warehouse Management System** built with **Laravel 12**, designed to centralize product management, inventory control, warehouse operations, procurement, sales, customer management, and user access.
 
-The system provides a structured foundation for multi-warehouse inventory control, operational traceability, purchasing and sales workflows, and role-based access control.
-
----
+The system provides a foundation for multi-warehouse inventory management, operational traceability, role-based access control, and realtime notifications.
 
 ## 1. Project Overview
 
-Retail WMS centralizes core retail and warehouse operations into a single application.
+Retail WMS brings core retail and warehouse operations together in one platform.
 
-It is designed around several key principles:
+### Core Features
 
--   **Modular architecture:** Business capabilities are separated into focused modules with clear responsibilities.
--   **Inventory integrity:** Stock changes are handled through controlled inventory operations rather than arbitrary quantity updates.
--   **Operational traceability:** Stock movements and business document status changes provide an auditable operational history.
--   **Access control:** Users receive permissions through role-based authorization.
--   **Transactional consistency:** Related business operations are grouped into database transactions where appropriate.
--   **Extensibility:** The application can evolve to support additional warehouses, integrations, reporting, and automation.
-
-### Core capabilities
-
-| Domain               | Capabilities                                                       |
-| -------------------- | ------------------------------------------------------------------ |
-| Dashboard            | Operational overview and business metrics                          |
-| Product Management   | Products and product categories                                    |
-| Warehouse Management | Warehouses and warehouse locations                                 |
-| Inventory Management | Stock visibility, receiving, transfers, adjustments, and movements |
-| Supplier Management  | Supplier records and management                                    |
-| Procurement          | Purchase orders, approval, and receiving                           |
-| Customer Management  | Customer records and account status                                |
-| Sales Management     | Sales orders and order lifecycle                                   |
-| User Management      | User accounts, roles, and activation status                        |
-| Authorization        | Role-based access control and granular permissions                 |
-| Notifications        | Application notifications and realtime communication               |
-
----
+| Module          | Features                                               |
+| --------------- | ------------------------------------------------------ |
+| Dashboard       | Operational overview and business metrics              |
+| Products        | Product and category management                        |
+| Warehouses      | Warehouse and location management                      |
+| Inventory       | Stock receiving, transfers, adjustments, and movements |
+| Suppliers       | Supplier management                                    |
+| Purchase Orders | Order creation, approval, and receiving                |
+| Customers       | Customer records and account management                |
+| Sales Orders    | Sales order lifecycle management                       |
+| Users           | User accounts, roles, and activation                   |
+| Notifications   | Database notifications and realtime updates            |
 
 ## 2. Technology Stack
 
-| Layer                  | Technology                             |
-| ---------------------- | -------------------------------------- |
-| Backend Framework      | Laravel 12                             |
-| Language               | PHP 8.4                                |
-| Database               | MySQL 8                                |
-| ORM                    | Laravel Eloquent                       |
-| Authentication         | Laravel Authentication / Sanctum       |
-| Authorization          | Spatie Laravel Permission              |
-| Frontend               | Blade Templates, HTML, CSS, JavaScript |
-| Frontend Build         | Vite                                   |
-| Styling                | Custom CSS, Tailwind CSS               |
-| Realtime Communication | Laravel Reverb                         |
-| Queue Processing       | Redis and Laravel Horizon              |
-| Web Server             | Nginx                                  |
-| Application Runtime    | PHP-FPM                                |
-| Containerization       | Docker and Docker Compose              |
-| Version Control        | Git                                    |
+| Layer           | Technology                       |
+| --------------- | -------------------------------- |
+| Backend         | Laravel 12, PHP 8.4              |
+| Database        | MySQL 8                          |
+| ORM             | Laravel Eloquent                 |
+| Authentication  | Laravel Authentication / Sanctum |
+| Authorization   | Spatie Laravel Permission        |
+| Frontend        | Blade, HTML, CSS, JavaScript     |
+| Build Tool      | Vite                             |
+| Realtime        | Laravel Reverb, Laravel Echo     |
+| Queue           | Redis, Laravel Horizon           |
+| Web Server      | Nginx                            |
+| Runtime         | PHP-FPM                          |
+| Infrastructure  | Docker, Docker Compose           |
+| Version Control | Git                              |
 
----
+## 3. System Architecture
 
-## 3. High-Level Architecture
-
-The application follows a layered Laravel architecture. HTTP requests are handled by routes and middleware, delegated to controllers, and processed through application models and domain services.
+The application follows a layered Laravel architecture.
 
 ```text
-                         CLIENT / BROWSER
-                                |
-                                v
-                         NGINX WEB SERVER
-                                |
-                                v
-                         LARAVEL APPLICATION
-                                |
-                +---------------+---------------+
-                |               |               |
-                v               v               v
-             ROUTES         MIDDLEWARE      AUTHENTICATION
-                |               |               |
-                +---------------+---------------+
-                                |
-                                v
-                           CONTROLLERS
-                                |
-                   +------------+------------+
-                   |                         |
-                   v                         v
-              DOMAIN SERVICES              MODELS
-                   |                         |
-                   +------------+------------+
-                                |
-                                v
-                          MYSQL DATABASE
-                                |
-              +-----------------+-----------------+
-              |                 |                 |
-              v                 v                 v
-          REDIS QUEUES     EVENT BROADCASTING   APPLICATION DATA
-              |                 |
-              v                 v
-          HORIZON             REVERB
+CLIENT / BROWSER
+       |
+       v
+NGINX WEB SERVER
+       |
+       v
+LARAVEL APPLICATION
+       |
+       +---- Routes & Middleware
+       |
+       +---- Controllers
+       |
+       +---- Models & Services
+       |
+       v
+   MYSQL DATABASE
+       |
+       +---- Redis / Horizon
+       |
+       +---- Laravel Reverb
+                    |
+                    v
+               Laravel Echo
+                    |
+                    v
+               Browser UI
 ```
 
-### Architectural responsibilities
+### Main Components
 
-**Presentation Layer**
+-   **Controllers:** Handle HTTP requests and coordinate application workflows.
+-   **Models:** Represent business entities and database relationships.
+-   **Services:** Encapsulate reusable business logic.
+-   **Middleware:** Handles authentication and access control.
+-   **MySQL:** Stores application and transactional data.
+-   **Redis & Horizon:** Support background job processing.
+-   **Reverb & Echo:** Provide realtime communication.
 
--   Blade views render the application interface.
--   Custom CSS provides module-specific styling.
--   JavaScript supports client-side interactions.
--   Vite manages frontend asset compilation.
+## 4. Main Business Modules
 
-**HTTP and Application Layer**
+### Product and Warehouse Management
 
--   Routes define application endpoints.
--   Middleware handles authentication, authorization, and request-level controls.
--   Controllers coordinate incoming requests and application operations.
--   Form validation protects application inputs.
-
-**Business and Domain Layer**
-
--   Models represent business entities and their relationships.
--   Domain services encapsulate reusable business operations.
--   Database transactions protect operations that involve multiple related records.
-
-**Infrastructure Layer**
-
--   MySQL persists operational and transactional data.
--   Redis supports queue processing and related infrastructure needs.
--   Laravel Horizon supervises queue workers.
--   Laravel Reverb provides realtime broadcasting.
--   Docker Compose coordinates the application services.
-
----
-
-## 4. Application Modules
-
-### 4.1 Product Management
-
-Responsible for maintaining the product catalog.
-
-Capabilities:
-
--   Create, view, update, and delete products.
--   Organize products into categories.
--   Maintain product information used by inventory, purchasing, and sales workflows.
-
-### 4.2 Warehouse Management
-
-Manages warehouse-level organization.
-
-Capabilities:
-
--   Create and manage warehouses.
+-   Manage products and categories.
+-   Create and maintain warehouses.
 -   Manage warehouse locations.
--   Associate inventory with warehouse records.
 
-### 4.3 Inventory Management
+### Inventory Management
 
-Provides centralized visibility and control over stock.
-
-Capabilities:
-
--   View inventory balances.
+-   View warehouse stock balances.
 -   Receive stock.
 -   Transfer stock between warehouses.
--   Record inventory adjustments.
--   Review stock movement history.
+-   Perform inventory adjustments.
+-   Track inventory movements.
 
-**Inventory integrity principle:** Stock changes should be performed through controlled inventory operations. Business workflows should not directly modify stock quantities without applying the corresponding inventory rules and recording the movement.
+Stock changes are processed through controlled inventory operations to maintain consistency between stock balances and movement records.
 
-### 4.4 Supplier Management
-
-Maintains supplier information used by procurement operations.
-
-Capabilities:
-
--   Create and maintain supplier records.
--   Search and view supplier information.
--   Manage supplier account status.
-
-### 4.5 Purchase Order Management
-
-Supports purchasing workflows from order creation through receiving.
-
-Capabilities:
+### Procurement
 
 -   Create and manage purchase orders.
--   Maintain purchase order items.
--   Support approval workflows.
+-   Submit orders for approval.
+-   Approve or reject purchase orders.
 -   Receive purchased goods.
--   Update inventory through the receiving process.
+-   Update inventory through the receiving workflow.
 
-### 4.6 Customer Management
+### Sales Management
 
-Maintains customer records for sales operations.
-
-Capabilities:
-
--   Create and manage customer records.
--   Search and view customers.
--   Manage active and inactive customer accounts.
-
-### 4.7 Sales Order Management
-
-Manages customer sales orders and their lifecycle.
-
-Capabilities:
-
--   Create sales orders.
--   Maintain order items and pricing information.
--   View and update order details.
+-   Manage customers and sales orders.
 -   Confirm and process orders.
 -   Complete or cancel orders.
--   Record order status history.
+-   Maintain order status history.
 
-Inventory is issued through the inventory service when an order is completed. The current implementation checks stock availability at completion rather than reserving stock at confirmation.
+Sales order completion invokes the inventory issuing workflow. Stock is currently checked at completion rather than reserved at confirmation.
 
-### 4.8 User Management
-
-Provides administrative control over application accounts.
-
-Capabilities:
+### User Management
 
 -   Create and update user accounts.
 -   Assign roles.
 -   Activate and deactivate accounts.
--   View user details and effective permissions.
+-   View user details and permissions.
+-   Protect privileged administrative accounts.
 
-Inactive accounts are prevented from authenticating, and active-session middleware checks account status during web requests.
+## 5. Authentication and Authorization
 
-### 4.9 Notifications and Realtime Communication
+Retail WMS uses Laravel authentication and Spatie Laravel Permission for role-based access control (RBAC).
 
-The application includes a notification center and realtime infrastructure.
+### Seeded Roles
 
--   Laravel notifications provide application-level notification functionality.
--   Laravel Reverb supports WebSocket broadcasting.
--   Redis and Laravel Horizon support background queue processing.
+1. Super Admin
+2. Admin
+3. Warehouse Manager
+4. Warehouse Staff
+5. Sales Manager
+6. Sales Staff
+7. Accountant
 
----
+Permissions control access to individual application operations, including:
 
-## 5. Inventory and Transaction Design
+-   `products.view`
+-   `products.create`
+-   `inventory.view`
+-   `inventory.receive`
+-   `inventory.transfer`
+-   `purchase-orders.approve`
+-   `sales-orders.create`
+-   `users.manage`
 
-Inventory is a central domain of the system. Stock balances and movement history must remain consistent.
+The authorization foundation and seeded roles are implemented. A dedicated role and permission management interface is a planned enhancement.
 
-### Core inventory concepts
+## 6. Notifications and Realtime Communication
 
--   **Product:** The item being tracked.
--   **Warehouse:** The physical or logical stock-holding facility.
--   **Warehouse Stock:** The current quantity of a product at a warehouse, together with its reorder threshold.
--   **Inventory Movement:** A record of a stock operation, such as receiving, transferring, or issuing stock.
+The application uses Laravel Notifications, Laravel Reverb, Laravel Echo, Redis, and Laravel Horizon.
 
-### Inventory operation flow
+### Architecture
 
 ```text
 Business Operation
        |
        v
-Inventory Service
+NotificationService
        |
        v
-Database Transaction
-       |
-       +---- Update Warehouse Stock
-       |
-       +---- Create Inventory Movement
-       |
-       +---- Commit Transaction
+WmsNotification
        |
        v
-Broadcast / Notification
+Redis / Horizon
+       |
+       +---- Database Notification
+       |
+       +---- Reverb Broadcasting
+                    |
+                    v
+               Laravel Echo
+                    |
+                    v
+                Browser UI
 ```
 
-The inventory service is the controlled entry point for stock operations. Related stock and movement changes should be committed together so that an unsuccessful operation does not leave partially updated inventory records.
+### Current Integrations
 
-### Current operational behavior
+| Event                            | Recipients                           |
+| -------------------------------- | ------------------------------------ |
+| Purchase order submitted         | Users with approval permission       |
+| Purchase order approved/rejected | Purchase order creator               |
+| Purchase order received          | Creator and eligible inventory users |
+| Stock received                   | Eligible inventory users             |
+| Stock transferred                | Eligible inventory users             |
 
--   Receiving increases stock.
--   Transfers move stock between warehouse balances.
--   Issuing decreases stock.
--   Inventory movement records provide an operational history.
--   Sales order completion invokes the inventory issuing workflow.
+The notification center supports notification history, unread counts, and read-status management.
 
----
+Private channels provide user-specific notifications and warehouse inventory updates.
 
-## 6. Authentication and Authorization
+## 7. Database Design
 
-The application uses Laravel authentication and Spatie Laravel Permission for role-based access control (RBAC).
+The application uses MySQL with Laravel Eloquent and database migrations.
 
-### Authorization model
+Key entities include:
 
-```text
-USER
- |
- +---- Assigned Roles
-          |
-          +---- Role Permissions
-                     |
-                     +---- Application Access
-```
+-   Users, Roles, and Permissions
+-   Products and Categories
+-   Warehouses and Warehouse Locations
+-   Warehouse Stocks and Inventory Movements
+-   Suppliers and Purchase Orders
+-   Customers and Sales Orders
+-   Order Items and Status Histories
+-   Notifications
 
-A role groups related permissions, while individual permissions control specific application actions.
-
-Examples:
-
-| Permission                | Description                  |
-| ------------------------- | ---------------------------- |
-| `dashboard.view`          | View the dashboard           |
-| `products.view`           | View products                |
-| `products.create`         | Create products              |
-| `products.edit`           | Update products              |
-| `inventory.view`          | View inventory               |
-| `inventory.receive`       | Receive stock                |
-| `inventory.transfer`      | Transfer stock               |
-| `purchase-orders.view`    | View purchase orders         |
-| `purchase-orders.approve` | Approve purchase orders      |
-| `sales-orders.view`       | View sales orders            |
-| `sales-orders.create`     | Create sales orders          |
-| `users.view`              | View users                   |
-| `users.create`            | Create users                 |
-| `roles.manage`            | Manage roles and permissions |
-
-### Seeded roles
-
-The current authorization seeder defines seven roles:
-
--   Super Admin
--   Admin
--   Warehouse Manager
--   Warehouse Staff
--   Sales Manager
--   Sales Staff
--   Accountant
-
-The role and permission definitions are maintained in `RolesAndPermissionsSeeder`.
-
-**Security considerations:**
-
--   Route authorization should be enforced on the server, not only through hidden menu items.
--   Privileged role assignment should be restricted to authorized administrators.
--   The last active Super Admin account must be protected from accidental removal or deactivation.
--   Deactivated users must not retain access through existing web sessions.
-
-The role and permission management interface is a separate development milestone; the underlying Spatie authorization foundation and seeded roles and permissions are already established.
-
----
-
-## 7. Database and Data Management
-
-MySQL is the primary persistence layer. Laravel Eloquent manages entity relationships and database interactions.
-
-The schema is managed through Laravel migrations.
-
-Key domain entities include:
-
--   Users
--   Roles and Permissions
--   Products
--   Categories
--   Warehouses
--   Warehouse Locations
--   Warehouse Stocks
--   Inventory Movements
--   Suppliers
--   Purchase Orders
--   Purchase Order Items
--   Customers
--   Sales Orders
--   Sales Order Items
--   Sales Order Status Histories
-
-### Database design principles
-
--   Use foreign keys to maintain referential integrity.
--   Use indexes for frequently filtered and searched fields.
--   Use database transactions for multi-record business operations.
--   Keep historical operational records wherever required for traceability.
--   Avoid destructive schema changes that could compromise operational data.
-
-Migrations should be applied incrementally using Laravel's migration commands.
-
----
+Database transactions are used for related business operations. Inventory operations should also use appropriate locking and concurrency controls.
 
 ## 8. Docker Infrastructure
 
-The application runs in a Docker Compose environment.
+The application runs using Docker Compose.
 
-| Service  | Responsibility                         |
-| -------- | -------------------------------------- |
-| `app`    | Laravel application running on PHP-FPM |
-| `nginx`  | Web server and HTTP entry point        |
-| `mysql`  | Relational database                    |
-| `redis`  | Queue and cache infrastructure         |
-| `queue`  | Laravel Horizon queue supervision      |
-| `reverb` | Realtime WebSocket server              |
+| Service  | Responsibility       |
+| -------- | -------------------- |
+| `app`    | Laravel / PHP-FPM    |
+| `nginx`  | Web server           |
+| `mysql`  | Database             |
+| `redis`  | Queue infrastructure |
+| `queue`  | Laravel Horizon      |
+| `reverb` | WebSocket server     |
 
-### Local service endpoints
+### Local Endpoints
 
-| Service     | Local endpoint        |
+| Service     | Address               |
 | ----------- | --------------------- |
 | Application | http://localhost:8081 |
 | Reverb      | http://localhost:8082 |
-| MySQL       | localhost:3307        |
+| MySQL       | `localhost:3307`      |
 
-The application connects to infrastructure services through the Docker Compose network. Internal service hostnames and ports should be used for container-to-container communication.
-
----
-
-## 9. Installation and Local Development
+## 9. Installation and Setup
 
 ### Prerequisites
 
--   macOS, Linux, or Windows with Docker support.
--   Docker Desktop or Docker Engine with Docker Compose.
--   Git.
--   Node.js and npm for local frontend asset compilation.
+-   Docker Desktop or Docker Engine
+-   Docker Compose
+-   Git
+-   Node.js and npm
 
-PHP and MySQL can run inside Docker; local PHP installation is not required for the documented Docker workflow.
-
-### Step 1 — Clone the repository
+### Step 1 — Clone Repository
 
 ```bash
 git clone <repository-url>
 cd retail-wms
 ```
 
-### Step 2 — Configure environment
-
-Create the environment file:
+### Step 2 — Configure Environment
 
 ```bash
 cp .env.example .env
 ```
 
-Configure the required application and database variables. Use the service names defined in Docker Compose for internal database and Redis connections.
+Configure the application, database, Redis, queue, and broadcasting environment variables.
 
-Do not commit `.env` or production credentials to Git.
-
-### Step 3 — Build and start services
+### Step 3 — Start Docker Services
 
 ```bash
 docker compose up -d --build
 ```
 
-### Step 4 — Install backend dependencies
+### Step 4 — Install Dependencies
 
 ```bash
 docker compose exec app composer install
+npm install
 ```
 
-### Step 5 — Generate application key
+### Step 5 — Initialize Application
 
 ```bash
 docker compose exec app php artisan key:generate
-```
-
-### Step 6 — Run database migrations
-
-```bash
 docker compose exec app php artisan migrate
 ```
 
-### Step 7 — Seed roles and permissions
+### Step 6 — Seed Roles and Permissions
 
 ```bash
 docker compose exec app php artisan db:seed --class=RolesAndPermissionsSeeder
 ```
 
-Run this seeder according to the deployment's database initialization procedure. It should be safe to rerun only if its implementation remains idempotent.
+Run the seeder according to your database initialization procedure.
 
-### Step 8 — Install and build frontend assets
+### Step 7 — Build Frontend
 
 ```bash
-npm install
 npm run build
 ```
 
-### Step 9 — Clear application caches
+### Step 8 — Access Application
 
-```bash
-docker compose exec app php artisan optimize:clear
-```
-
-### Step 10 — Access the application
-
-Open:
-
-http://localhost:8081
-
----
+Open http://localhost:8081
 
 ## 10. Common Development Commands
 
-### Docker services
+**Docker**
 
 ```bash
 docker compose ps
 docker compose logs -f
-docker compose logs -f app
-docker compose logs -f nginx
-docker compose logs -f queue
-docker compose logs -f reverb
-```
-
-Start and stop services:
-
-```bash
-docker compose up -d
 docker compose stop
+docker compose up -d
 ```
 
-### Laravel commands
+**Laravel**
 
 ```bash
-docker compose exec app php artisan about
 docker compose exec app php artisan route:list
 docker compose exec app php artisan migrate:status
 docker compose exec app php artisan optimize:clear
-```
-
-### Queue management
-
-```bash
 docker compose exec app php artisan horizon:status
 ```
 
-### Frontend
+**Frontend**
 
 ```bash
 npm run build
 ```
 
-### PHP syntax validation
-
-```bash
-docker compose exec app php -l app/Http/Controllers/ExampleController.php
-```
-
-### Git workflow
-
-```bash
-git status
-git add <specific-files>
-git diff --cached
-git commit -m "feat: describe the change"
-git push origin main
-```
-
-Stage specific files rather than committing unrelated changes.
-
----
-
 ## 11. Project Structure
-
-The following is a representative Laravel application structure. Exact module files may evolve as development continues.
 
 ```text
 retail-wms/
-│
 ├── app/
+│   ├── Events/
 │   ├── Http/
 │   │   ├── Controllers/
-│   │   ├── Middleware/
-│   │   └── Requests/
-│   │
+│   │   └── Middleware/
 │   ├── Models/
-│   ├── Services/
-│   └── Providers/
-│
+│   ├── Notifications/
+│   └── Services/
 ├── bootstrap/
-│   └── app.php
-│
 ├── config/
-│
 ├── database/
 │   ├── migrations/
-│   ├── factories/
 │   └── seeders/
-│
 ├── public/
-│   ├── css/
-│   └── js/
-│
 ├── resources/
-│   ├── css/
 │   ├── js/
+│   ├── css/
 │   └── views/
-│       ├── layouts/
-│       ├── products/
-│       ├── inventory/
-│       ├── suppliers/
-│       ├── purchase-orders/
-│       ├── customers/
-│       ├── sales-orders/
-│       ├── users/
-│       └── notifications/
-│
 ├── routes/
 │   ├── web.php
 │   ├── api.php
-│   ├── channels.php
-│   └── console.php
-│
+│   └── channels.php
 ├── tests/
-│
 ├── docker-compose.yml
 ├── Dockerfile
-├── package.json
 ├── composer.json
-├── vite.config.js
+├── package.json
 └── README.md
 ```
 
----
+## 12. Security and Best Practices
 
-## 12. Security and Operational Practices
+-   Keep environment variables and credentials out of version control.
+-   Disable debug mode in production.
+-   Use HTTPS for production environments.
+-   Enforce server-side authorization.
+-   Validate user input.
+-   Protect inventory operations with database transactions.
+-   Restrict privileged role assignments.
+-   Monitor queue workers and failed jobs.
+-   Back up the database regularly.
+-   Apply migrations through controlled deployment procedures.
 
-The following practices should be followed during development and deployment:
+## 13. Development Roadmap
 
-1. Keep secrets and environment-specific credentials outside version control.
-2. Disable debug mode in production.
-3. Use HTTPS for production application traffic.
-4. Enforce authorization on backend routes and operations.
-5. Validate all user-supplied input.
-6. Protect inventory operations with database transactions and appropriate concurrency controls.
-7. Restrict access to privileged roles and administrative functions.
-8. Monitor queue workers and realtime services.
-9. Back up the database and test restoration procedures.
-10. Apply migrations through controlled deployment processes.
-11. Avoid destructive database commands against environments containing operational data.
-12. Rotate credentials if they have been exposed.
-
----
-
-## 13. Implementation Status and Roadmap
-
-### Current implementation
-
--   Laravel 12 application and Docker infrastructure.
--   Authentication and account activation controls.
--   Product and category management.
--   Warehouse and location management.
--   Inventory operations and movement tracking.
--   Supplier management.
--   Purchase order workflows and receiving.
--   Customer management.
--   Sales order lifecycle.
--   User management and account status.
--   Spatie roles and permission foundation.
--   Notification and realtime infrastructure.
-
-### Recommended next milestones
-
-| Priority | Area                   | Objective                                                                       |
-| -------- | ---------------------- | ------------------------------------------------------------------------------- |
-| High     | Roles & Permissions UI | Role creation, editing, permission assignment, and protected system roles       |
-| High     | Automated Testing      | Unit, feature, authorization, and inventory transaction tests                   |
-| High     | Inventory Concurrency  | Prevent race conditions and overselling during simultaneous stock operations    |
-| High     | Sales Order Controls   | Server-side pricing validation, stock reservation strategy, and credit controls |
-| Medium   | Reporting              | Inventory valuation, stock movement, purchasing, and sales reports              |
-| Medium   | Audit Logging          | Track sensitive account, permission, and business-operation changes             |
-| Medium   | Notifications          | Expand event-driven operational notifications                                   |
-| Future   | Integrations           | External accounting, ERP, e-commerce, and shipping integrations                 |
-
----
+| Priority | Feature                | Objective                                |
+| -------- | ---------------------- | ---------------------------------------- |
+| High     | Roles & Permissions UI | Manage roles and permissions             |
+| High     | Automated Testing      | Unit, feature, and integration tests     |
+| High     | Inventory Concurrency  | Prevent stock conflicts and overselling  |
+| High     | Sales Order Controls   | Pricing validation and stock reservation |
+| Medium   | Reporting              | Inventory, purchasing, and sales reports |
+| Medium   | Audit Logging          | Track sensitive business operations      |
+| Medium   | Notifications          | Sales events and low-stock alerts        |
+| Future   | External Integrations  | Accounting, ERP, and e-commerce systems  |
 
 ## 14. Engineering Principles
 
-The project should continue to follow these engineering standards:
+Retail WMS follows these development principles:
 
--   Keep controllers focused on HTTP coordination.
--   Move reusable business rules into services or dedicated domain components.
--   Use Form Requests or equivalent validation boundaries for complex input.
--   Use transactions for operations that modify related business records.
--   Protect stock balances against concurrent updates.
--   Keep authorization checks close to the protected operation.
--   Maintain backward-compatible migrations where practical.
--   Write automated tests for critical business rules.
--   Keep operational logs and audit history meaningful.
--   Prefer explicit, maintainable code over unnecessary abstraction.
+-   Modular and maintainable application architecture.
+-   Reusable business services.
+-   Transactional data integrity.
+-   Centralized inventory operations.
+-   Server-side authorization.
+-   Secure user and permission management.
+-   Realtime operational communication.
+-   Incremental database migrations.
+-   Automated testing for critical business workflows.
 
 ---
+
+**Retail WMS — A centralized platform for retail operations, warehouse management, and inventory control.**
