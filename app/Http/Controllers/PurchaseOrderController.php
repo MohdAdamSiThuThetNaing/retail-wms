@@ -9,6 +9,7 @@ use App\Models\Warehouse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Services\NotificationService;
 
 class PurchaseOrderController extends Controller
 {
@@ -311,9 +312,15 @@ class PurchaseOrderController extends Controller
     /**
      * Submit a draft or rejected PO for approval.
      */
-    public function submit(PurchaseOrder $purchaseOrder)
-    {
-        return DB::transaction(function () use ($purchaseOrder) {
+
+    public function submit(
+        PurchaseOrder $purchaseOrder,
+        NotificationService $notifications
+    ) {
+        return DB::transaction(function () use (
+            $purchaseOrder,
+            $notifications
+        ) {
             $purchaseOrder = PurchaseOrder::whereKey($purchaseOrder->id)
                 ->lockForUpdate()
                 ->firstOrFail();
@@ -339,11 +346,42 @@ class PurchaseOrderController extends Controller
                 'comments' => 'Purchase order submitted for approval.',
             ]);
 
+            $purchaseOrderId = $purchaseOrder->id;
+            $actorId = auth()->id();
+
+            DB::afterCommit(function () use (
+                $notifications,
+                $purchaseOrderId,
+                $actorId
+            ) {
+                $po = PurchaseOrder::find($purchaseOrderId);
+
+                if (!$po) {
+                    return;
+                }
+
+                $notifications->notifyPermissions(
+                    permissions: ['purchase-orders.approve'],
+                    category: 'purchase',
+                    title: 'Purchase Order Awaiting Approval',
+                    message: "Purchase Order {$po->po_number} has been submitted for approval.",
+                    url: route('purchase-orders.show', $po),
+                    metadata: [
+                        'purchase_order_id' => $po->id,
+                        'po_number' => $po->po_number,
+                        'status' => 'pending_approval',
+                        'action' => 'submitted',
+                    ],
+                    exceptUserId: $actorId
+                );
+            });
+
             return redirect()
                 ->route('purchase-orders.show', $purchaseOrder)
                 ->with('success', 'Purchase order submitted for approval.');
         });
     }
+
 
     /**
      * Delete a draft or rejected PO.

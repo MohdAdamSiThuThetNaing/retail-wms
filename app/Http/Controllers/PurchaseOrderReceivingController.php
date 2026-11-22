@@ -8,6 +8,8 @@ use App\Services\InventoryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Models\User;
+use App\Services\NotificationService;
 
 class PurchaseOrderReceivingController extends Controller
 {
@@ -32,10 +34,12 @@ class PurchaseOrderReceivingController extends Controller
     /**
      * Receive products against an approved purchase order.
      */
+
     public function store(
         Request $request,
         PurchaseOrder $purchaseOrder,
-        InventoryService $inventoryService
+        InventoryService $inventoryService,
+        NotificationService $notifications
     ) {
         $data = $request->validate([
             'items' => ['required', 'array', 'min:1'],
@@ -46,7 +50,9 @@ class PurchaseOrderReceivingController extends Controller
         DB::transaction(function () use (
             $data,
             $purchaseOrder,
-            $inventoryService
+            $inventoryService,
+            $notifications,
+            $request
         ) {
             $purchaseOrder = PurchaseOrder::whereKey($purchaseOrder->id)
                 ->lockForUpdate()
@@ -95,7 +101,7 @@ class PurchaseOrderReceivingController extends Controller
                     warehouse: $purchaseOrder->warehouse,
                     product: $item->product,
                     quantity: $quantity,
-                    actorId: auth()->id(),
+                    actorId: $request->user()->id,
                     reference: $purchaseOrder->po_number
                 );
 
@@ -123,12 +129,14 @@ class PurchaseOrderReceivingController extends Controller
                     (int) $item->received_quantity >= (int) $item->ordered_quantity
             );
 
+            $newStatus = $allReceived ? 'received' : 'partially_received';
+
             $purchaseOrder->update([
-                'status' => $allReceived ? 'received' : 'partially_received',
+                'status' => $newStatus,
             ]);
 
             $purchaseOrder->approvals()->create([
-                'user_id' => auth()->id(),
+                'user_id' => $request->user()->id,
                 'action' => 'received',
                 'comments' => json_encode([
                     'items' => $receivedSummary,
@@ -136,10 +144,68 @@ class PurchaseOrderReceivingController extends Controller
                     'notes' => $data['notes'] ?? null,
                 ]),
             ]);
+
+            $purchaseOrderId = $purchaseOrder->id;
+            $actorId = $request->user()->id;
+
+            DB::afterCommit(function () use (
+                $purchaseOrderId,
+                $actorId,
+                $totalReceived,
+                $newStatus,
+                $receivedSummary,
+                $notifications
+            ) {
+                $po = PurchaseOrder::with('creator')
+                    ->find($purchaseOrderId);
+
+                if (!$po) {
+                    return;
+                }
+
+                $recipients = User::query()
+                    ->where('is_active', true)
+                    ->where(function ($query) {
+                        $query
+                            ->whereHas('roles.permissions', function ($roleQuery) {
+                                $roleQuery->where('name', 'inventory.view');
+                            })
+                            ->orWhereHas('permissions', function ($permissionQuery) {
+                                $permissionQuery->where('name', 'inventory.view');
+                            });
+                    })
+                    ->get();
+
+                if ($po->creator && $po->creator->is_active) {
+                    $recipients->push($po->creator);
+                }
+
+                $recipients = $recipients
+                    ->unique('id')
+                    ->values();
+
+                $notifications->notifyUsers(
+                    users: $recipients,
+                    category: 'inventory',
+                    title: 'Purchase Order Stock Received',
+                    message: "Received {$totalReceived} units against Purchase Order {$po->po_number}.",
+                    url: route('purchase-orders.show', $po),
+                    metadata: [
+                        'purchase_order_id' => $po->id,
+                        'po_number' => $po->po_number,
+                        'status' => $newStatus,
+                        'action' => 'received',
+                        'total_quantity' => $totalReceived,
+                        'items' => $receivedSummary,
+                    ],
+                    exceptUserId: $actorId
+                );
+            });
         }, attempts: 3);
 
         return redirect()
             ->route('purchase-orders.show', $purchaseOrder)
             ->with('success', 'Purchase order items received successfully.');
     }
+
 }
