@@ -21,6 +21,9 @@ class AuthController extends Controller
             'password' => ['required', 'string'],
         ]);
 
+        // Only active users are allowed to authenticate.
+        $credentials['is_active'] = true;
+
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
 
@@ -28,7 +31,9 @@ class AuthController extends Controller
         }
 
         return back()
-            ->withErrors(['email' => 'Invalid email or password.'])
+            ->withErrors([
+                'email' => 'Invalid email or password, or your account is inactive.',
+            ])
             ->onlyInput('email');
     }
 
